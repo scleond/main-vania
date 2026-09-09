@@ -1,53 +1,58 @@
-extends CharacterBody2D
-
-var playing = false
-var upgraded = false
-var animation_clock = 0.0
-var dash_left = 0.0
-var dash_wait = 0.0
-var facing = 1.0
-
+extends Node2D
+# Disposable atlas + attachment experiment. All builds share these body frames.
+var atlas = preload('res://assets/spirit-atlas-magenta.png')
+var motion = 0
+var frame = 0
+var elements = [false,false,false,false,false]
+var mirror = false
+var anchors = false
+var idle_boxes = [Rect2(50,24,180,253),Rect2(310,24,175,253),Rect2(565,24,180,253),Rect2(810,24,178,253)]
+var run_boxes = [Rect2(45,286,190,237),Rect2(310,286,175,237),Rect2(565,286,182,237),Rect2(818,286,177,237),Rect2(1080,286,178,237),Rect2(1335,286,182,237)]
+var swipe_boxes = [Rect2(45,550,190,230),Rect2(308,550,226,230),Rect2(563,550,233,230),Rect2(833,550,179,230)]
+var head = Vector2(0,-31)
+var chest = Vector2(0,-13)
+var hand = Vector2(12,-10)
 func _ready():
-	var shape = CollisionShape2D.new()
-	var rectangle = RectangleShape2D.new()
-	rectangle.size = Vector2(14, 26)
-	shape.shape = rectangle
-	add_child(shape)
-	queue_redraw()
-
-func _physics_process(delta):
-	if not playing:
-		return
-	var direction = Input.get_axis("left", "right")
-	if direction != 0:
-		facing = direction
-	dash_wait = maxf(0, dash_wait - delta)
-	dash_left = maxf(0, dash_left - delta)
-	if Input.is_action_just_pressed("dash") and dash_wait == 0:
-		dash_left = 0.13
-		dash_wait = 0.65
-	if not is_on_floor():
-		velocity.y += 850 * delta
-	if Input.is_action_just_pressed("jump") and is_on_floor():
-		velocity.y = -310
-	velocity.x = facing * 340 if dash_left > 0 else direction * 115
-	move_and_slide()
-	position.x = clampf(position.x, 12, 628)
-	animation_clock += delta if direction != 0 else delta * 0.3
-	queue_redraw()
-
+ var shader = Shader.new()
+ shader.code = '''shader_type canvas_item;
+ uniform bool mirror_form = false;
+ void fragment(){
+ vec4 c = texture(TEXTURE,UV);
+ if(c.r > 0.65 && c.b > 0.65 && c.g < 0.4) c.a=0.0;
+ if(mirror_form && c.a>0.0){
+ float light=max(c.r,max(c.g,c.b));
+ c.rgb=vec3(light*0.85,light*0.48,light);
+ }
+ COLOR=c;
+ }'''
+ material = ShaderMaterial.new()
+ material.shader = shader
+ texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+func piece(region:Rect2,where:Vector2,size:Vector2):
+ draw_texture_rect_region(atlas,Rect2(where,size),region)
 func _draw():
-	# Original block-art placeholder; six stepped poses at 8 fps, movement remains 60 Hz.
-	var frame = int(animation_clock * 8) % 6
-	var leg = [-2, 0, 2, 2, 0, -2][frame] if absf(velocity.x) > 1 else 0
-	draw_rect(Rect2(-7, -14, 14, 18), Color("e8e0c4"))
-	draw_rect(Rect2(-4, -19, 5, 6), Color("e8e0c4"))
-	draw_rect(Rect2(-5, -10, 10, 8), Color("182132"))
-	draw_rect(Rect2(-3, -8, 2, 3), Color("91e7e1"))
-	draw_rect(Rect2(2, -8, 2, 3), Color("91e7e1"))
-	draw_rect(Rect2(-5 + leg, 4, 4, 9), Color("babcb4"))
-	draw_rect(Rect2(2 - leg, 4, 4, 9), Color("babcb4"))
-	if upgraded:
-		draw_rect(Rect2(-11, -1, 5, 7), Color("f4a24e"))
-		draw_rect(Rect2(7, -1, 5, 7), Color("f4a24e"))
-		draw_rect(Rect2(-2, -1, 4, 5), Color("fff0a4"))
+ material.set_shader_parameter('mirror_form',mirror)
+ var boxes = [idle_boxes,run_boxes,swipe_boxes][motion]
+ var box:Rect2 = boxes[frame % boxes.size()]
+ # Separate body anchor and per-pose hand anchors avoid combinatorial sprites.
+ var foot_x = [100.0,90.0,93.0,94.0][frame%4] if motion==0 else 100.0
+ if motion==2: foot_x=[100.0,102.0,102.0,92.0][frame%4]
+ hand=Vector2(12,-10)
+ if motion==2: hand=[Vector2(-12,-15),Vector2(22,-20),Vector2(25,-19),Vector2(10,-10)][frame%4]
+ if motion==1: hand=[Vector2(12,-11),Vector2(10,-13),Vector2(12,-11),Vector2(11,-12),Vector2(10,-14),Vector2(9,-9)][frame%6]
+ # Rear attachments, then shared body, then foreground attachments.
+ if elements[4]: piece(Rect2(1080,845,64,126),Vector2(-15,-19),Vector2(10,16))
+ if elements[2]: piece(Rect2(550,829,78,135),Vector2(-22,-26),Vector2(13,25))
+ if elements[3]: piece(Rect2(802,840,87,127),Vector2(-19,-26),Vector2(16,24))
+ piece(box,Vector2(-foot_x*0.19,-48),Vector2(box.size.x*0.19,48))
+ if elements[1]: piece(Rect2(295,829,78,126),head+Vector2(-8,-19),Vector2(14,23))
+ if elements[0]:
+  piece(Rect2(1360,842,100,116),chest-Vector2(4,7),Vector2(9,12))
+  piece(Rect2(164,828,82,151),hand-Vector2(3,6),Vector2(10,20))
+ if elements[4]: piece(Rect2(1167,845,65,126),Vector2(4,-16),Vector2(8,14))
+ if mirror:
+  draw_line(Vector2(-19,3),Vector2(22,3),Color('#c59bff'),1)
+ if anchors:
+  for point in [Vector2.ZERO,head,chest,hand]:
+   draw_line(point-Vector2(2,0),point+Vector2(2,0),Color.GREEN,1)
+   draw_line(point-Vector2(0,2),point+Vector2(0,2),Color.GREEN,1)

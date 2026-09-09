@@ -2,7 +2,7 @@
 config_version=5
 
 [application]
-config/name="Spirit browser feasibility"
+config/name="Spirit animation workshop"
 run/main_scene="res://main.tscn"
 
 [display]

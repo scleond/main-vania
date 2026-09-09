@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bpdtmt8sc4nxy"
-path="res://.godot/imported/index.png-659c11691fe5279cf81f33eb936290a4.ctex"
+uid="uid://b7n6gdp200qrj"
+path="res://.godot/imported/spirit-atlas-magenta.png-2f4468a3c323e3bd8cab9af5844ef328.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://build/index.png"
-dest_files=["res://.godot/imported/index.png-659c11691fe5279cf81f33eb936290a4.ctex"]
+source_file="res://assets/spirit-atlas-magenta.png"
+dest_files=["res://.godot/imported/spirit-atlas-magenta.png-2f4468a3c323e3bd8cab9af5844ef328.ctex"]
 
 [params]
 
