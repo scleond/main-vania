@@ -1,0 +1,6 @@
+.godot/
+build/
+node_modules/
+*.log
+chromium.png
+chromium-results.json
