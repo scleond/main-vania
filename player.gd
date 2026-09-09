@@ -4,8 +4,13 @@ const MOVE_SPEED=115.0
 const DASH_SPEED=340.0
 const DASH_DURATION=0.13
 const DASH_COOLDOWN=0.65
+const MIXED_DASH_COOLDOWN=0.4
 const JUMP_SPEED=310.0
 const GRAVITY=850.0
+const COYOTE_DURATION=0.1
+const JUMP_BUFFER_DURATION=0.1
+const ROOM_LEFT_BOUND=15.0
+const ROOM_RIGHT_BOUND=625.0
 const ATTACK_DURATION=0.26
 const ATTACK_COOLDOWN=0.38
 var active=false
@@ -45,9 +50,9 @@ func _physics_process(delta):
  coyote=maxf(0,coyote-delta)
  jump_buffer=maxf(0,jump_buffer-delta)
  if is_on_floor():
-  coyote=0.1
+  coyote=COYOTE_DURATION
   air_used=false
- if Input.is_action_just_pressed('jump'):jump_buffer=0.1
+ if Input.is_action_just_pressed('jump'):jump_buffer=JUMP_BUFFER_DURATION
  if jump_buffer>0 and (coyote>0 or (mixed and not air_used)):
   if coyote<=0:air_used=true
   velocity.y=-JUMP_SPEED
@@ -57,7 +62,7 @@ func _physics_process(delta):
  if axis!=0 and attack_left<=0:facing=signf(axis)
  if Input.is_action_just_pressed('dash') and dash_wait<=0:
   dash_left=DASH_DURATION
-  dash_wait=0.4 if mixed else DASH_COOLDOWN
+  dash_wait=MIXED_DASH_COOLDOWN if mixed else DASH_COOLDOWN
  if Input.is_action_just_pressed('attack') and attack_wait<=0 and dash_left<=0:
   attack_left=ATTACK_DURATION
   attack_wait=ATTACK_COOLDOWN
@@ -65,10 +70,9 @@ func _physics_process(delta):
  velocity.y+=GRAVITY*delta
  velocity.x=facing*DASH_SPEED if dash_left>0 else axis*MOVE_SPEED
  move_and_slide()
- position.x=clampf(position.x,15,625)
+ position.x=clampf(position.x,ROOM_LEFT_BOUND,ROOM_RIGHT_BOUND)
  visual.scale.x=facing
  visual.motion=2 if attack_left>0 else (1 if absf(velocity.x)>1 else 0)
- visual.frame=mini(3,int((ATTACK_DURATION-attack_left)*visual.attack_playback_speed)) if attack_left>0 else int(clock*(visual.run_playback_speed if visual.motion==1 else visual.idle_playback_speed))
  visual.elements=[upgrade!='',false,false,mixed,mixed]
  visual.modulate.a=0.45 if invulnerable>0 and int(clock*15)%2==0 else 1.0
  visual.queue_redraw()

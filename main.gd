@@ -1,5 +1,7 @@
 extends Node2D
-# Disposable feel experiment. Session state only; this is not production progression.
+# Session state and input boundary for the production movement room.
+const CHECKPOINT_POSITION=Vector2(70,299)
+const CHECKPOINT_RETRY_DISTANCE=45.0
 var player
 var hp=6.0
 var souls=0
@@ -15,6 +17,7 @@ var wave_wait=0.0
 var choice_delay=0.0
 var kills=0
 var deaths=0
+var retries=0
 var clock=0.0
 var message=''
 var message_left=0.0
@@ -41,12 +44,20 @@ func button_at(text_value,at,callback,parent):
  parent.add_child(b)
  return b
 func _ready():
- for action in ['left','right','jump','dash','attack']:InputMap.add_action(action)
+ for action in ['left','right','jump','dash','attack','pause','retry']:InputMap.add_action(action)
  for pair in [['left',KEY_A],['left',KEY_LEFT],['right',KEY_D],['right',KEY_RIGHT],['jump',KEY_SPACE],['dash',KEY_SHIFT],['attack',KEY_J],['attack',KEY_X]]:
   var e=InputEventKey.new()
   e.physical_keycode=pair[1]
   InputMap.action_add_event(pair[0],e)
+ for pair in [['pause',KEY_ESCAPE],['retry',KEY_K],['retry',KEY_E]]:
+  var e=InputEventKey.new()
+  e.physical_keycode=pair[1]
+  InputMap.action_add_event(pair[0],e)
  for pair in [['jump',JOY_BUTTON_A],['attack',JOY_BUTTON_X],['dash',JOY_BUTTON_RIGHT_SHOULDER]]:
+  var e=InputEventJoypadButton.new()
+  e.button_index=pair[1]
+  InputMap.action_add_event(pair[0],e)
+ for pair in [['pause',JOY_BUTTON_START],['retry',JOY_BUTTON_BACK]]:
   var e=InputEventJoypadButton.new()
   e.button_index=pair[1]
   InputMap.action_add_event(pair[0],e)
@@ -65,7 +76,7 @@ func _ready():
   body.add_child(c)
   add_child(body)
  player=load('res://player.gd').new()
- player.position=Vector2(70,300)
+ player.position=CHECKPOINT_POSITION
  add_child(player)
  ui=CanvasLayer.new()
  add_child(ui)
@@ -73,7 +84,7 @@ func _ready():
  hud=label_at('',Vector2(16,33))
  status=label_at('',Vector2(16,53),11)
  label_at('A/D or arrows move · Space jump · J/X action · Shift dash',Vector2(16,315),11)
- label_at('E retry at checkpoint · K nearby retry · Esc pause · N new session',Vector2(16,332),11)
+ label_at('E/K retry nearby · Esc pause · P presentation demo · N new session',Vector2(16,332),11)
  menu=Panel.new()
  menu.position=Vector2(110,90)
  menu.size=Vector2(420,165)
@@ -109,7 +120,7 @@ func start_run():
 func respawn(count=true):
  if count:deaths+=1
  hp=6
- player.position=Vector2(70,299)
+ player.position=CHECKPOINT_POSITION
  player.velocity=Vector2.ZERO
  player.invulnerable=1.0
  player.attack_left=0
@@ -124,14 +135,14 @@ func respawn(count=true):
 func note(value):
  message=value
  message_left=4.0
+func can_retry_nearby():
+ return player.position.distance_to(CHECKPOINT_POSITION)<=CHECKPOINT_RETRY_DISTANCE
 func _unhandled_key_input(event):
  if not event.pressed or event.echo:return
  match event.physical_keycode:
   KEY_ENTER:
    if not playing:start_run()
   KEY_N:start_run()
-  KEY_ESCAPE:
-   if playing and not choosing:paused=not paused
   KEY_1:
    if choosing:select_upgrade('burn')
   KEY_2:
@@ -140,10 +151,15 @@ func _unhandled_key_input(event):
    if playing and not choosing:
     mixed=not mixed
     note('Preview: Stone protection + Wind air-jump / faster dash' if mixed else 'Mixed preview off. Earned Ember upgrade retained.')
-  KEY_K:
-   if playing and not choosing:respawn()
-  KEY_E:
-   if playing and not choosing and absf(player.position.x-70)<45:respawn(false)
+  KEY_P:
+   if playing:player.visual.use_alternate_presentation(not player.visual.alternate_presentation)
+func process_session_actions():
+ if not playing or choosing:return
+ if Input.is_action_just_pressed('pause'):
+  paused=not paused
+ if not paused and Input.is_action_just_pressed('retry') and can_retry_nearby():
+  retries+=1
+  respawn(false)
 func select_upgrade(value):
  if not choosing:return
  upgrade=value
@@ -162,6 +178,7 @@ func spawn_wave():
 func add_enemy(x,medium):
  enemies.append({'x':float(x),'hp':6.0 if medium else 3.0,'max_hp':6.0 if medium else 3.0,'medium':medium,'mode':'approach','timer':0.0,'dir':-1.0,'hit_id':-1,'burn':0.0,'burn_tick':0.0,'flash':0.0})
 func _physics_process(delta):
+ process_session_actions()
  player.active=playing and not choosing and not paused
  player.upgrade=upgrade
  player.mixed=mixed
@@ -239,7 +256,7 @@ func _process(_delta):
  refresh()
  pause_label.visible=paused
  if OS.has_feature('web'):
-  JavaScriptBridge.eval('window.__vania_probe = '+JSON.stringify({'ready':true,'playing':playing,'choosing':choosing,'paused':paused,'hp':hp,'souls':souls,'upgrade':upgrade,'mixed':mixed,'wave':wave,'kills':kills,'deaths':deaths,'x':player.position.x,'y':player.position.y,'attack':player.attack_id,'enemies':enemies,'actions':{'move':'left/right','jump':'jump','dash':'dash','retry':'checkpoint'}}))
+  JavaScriptBridge.eval('window.__vania_probe = '+JSON.stringify({'ready':true,'playing':playing,'choosing':choosing,'paused':paused,'hp':hp,'souls':souls,'upgrade':upgrade,'mixed':mixed,'wave':wave,'kills':kills,'deaths':deaths,'retries':retries,'x':player.position.x,'y':player.position.y,'attack':player.attack_id,'presentation':'alternate' if player.visual.alternate_presentation else 'default','actions':{'move':'left/right','jump':'jump','dash':'dash','pause':'pause','retry':'retry'}}))
  queue_redraw()
 func _notification(what):
  if what==NOTIFICATION_APPLICATION_FOCUS_OUT and playing:paused=true
@@ -250,8 +267,8 @@ func _draw():
  for rect in platforms:
   draw_rect(rect,Color('#354340'))
   draw_rect(Rect2(rect.position,Vector2(rect.size.x,3)),Color('#8a9c73'))
- draw_rect(Rect2(62,273,16,27),Color('#537f83'))
- draw_circle(Vector2(70,269),5,Color('#a6f4d7'))
+ draw_rect(Rect2(CHECKPOINT_POSITION.x-8,273,16,27),Color('#537f83'))
+ draw_circle(CHECKPOINT_POSITION+Vector2(0,-30),5,Color('#a6f4d7'))
  for enemy in enemies:
   var x=enemy.x
   var w=19 if enemy.medium else 13

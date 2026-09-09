@@ -1,5 +1,5 @@
 // Chrome smoke check for the production movement boundary.
-const { chromium } = require('/Users/cleon/projects/cbs-fantasy-digest/node_modules/playwright');
+const { chromium } = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
 const result = { browser: 'chromium', checks: {}, errors: [] };
@@ -15,6 +15,8 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   await page.keyboard.press('Enter');
   let state = await read();
   check('session starts', state.playing, state);
+  await page.keyboard.press('p'); await page.waitForTimeout(100); state = await read();
+  check('alternate presentation is selectable', state.presentation === 'alternate', state);
   const startX = state.x;
   await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
   state = await read(); check('keyboard movement', state.x > startX + 20, state);
@@ -25,7 +27,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   check('pause boundary', state.paused, state);
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   await page.keyboard.press('k'); await page.waitForTimeout(150); state = await read();
-  check('nearby retry boundary', state.deaths >= 1 && Math.abs(state.x - 70) < 8, state);
+  check('nearby retry boundary', state.retries >= 1 && Math.abs(state.x - 70) < 8, state);
   check('no page errors', result.errors.length === 0, result.errors);
   result.status = 'passed'; await page.screenshot({ path: path.join(__dirname, 'chromium.png') });
   await browser.close();

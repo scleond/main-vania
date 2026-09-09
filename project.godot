@@ -1,4 +1,4 @@
-; THROWAWAY browser feasibility fixture, not production game code.
+; Production browser movement room.
 config_version=5
 
 [application]

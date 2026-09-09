@@ -3,12 +3,17 @@ extends Node2D
 @export var idle_playback_speed=4.0
 @export var run_playback_speed=8.0
 @export var attack_playback_speed=16.0
+@export var alternate_idle_playback_speed=7.0
+@export var alternate_run_playback_speed=3.0
+@export var alternate_attack_playback_speed=10.0
 var atlas = preload('res://assets/spirit-atlas-magenta.png')
 var motion = 0
 var frame = 0
 var elements = [false,false,false,false,false]
 var mirror = false
 var anchors = false
+var alternate_presentation = false
+var presentation_clock = 0.0
 var idle_boxes = [Rect2(50,24,180,253),Rect2(310,24,175,253),Rect2(565,24,180,253),Rect2(810,24,178,253)]
 var run_boxes = [Rect2(45,286,190,237),Rect2(310,286,175,237),Rect2(565,286,182,237),Rect2(818,286,177,237),Rect2(1080,286,178,237),Rect2(1335,286,182,237)]
 var swipe_boxes = [Rect2(45,550,190,230),Rect2(308,550,226,230),Rect2(563,550,233,230),Rect2(833,550,179,230)]
@@ -31,6 +36,17 @@ func _ready():
  material = ShaderMaterial.new()
  material.shader = shader
  texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+func use_alternate_presentation(enabled):
+ alternate_presentation=enabled
+ presentation_clock=0.0
+ queue_redraw()
+func _process(delta):
+ presentation_clock+=delta
+ var idle_speed=alternate_idle_playback_speed if alternate_presentation else idle_playback_speed
+ var run_speed=alternate_run_playback_speed if alternate_presentation else run_playback_speed
+ var attack_speed=alternate_attack_playback_speed if alternate_presentation else attack_playback_speed
+ frame=int(presentation_clock*(attack_speed if motion==2 else (run_speed if motion==1 else idle_speed)))
+ queue_redraw()
 func piece(region:Rect2,where:Vector2,size:Vector2):
  draw_texture_rect_region(atlas,Rect2(where,size),region)
 func _draw():
