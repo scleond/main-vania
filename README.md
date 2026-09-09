@@ -28,7 +28,7 @@ VANIA_URL=https://<owner>.github.io/<repo>/ node browser-check.cjs
 
 The smoke check observes `window.__vania_probe`, the high-level session boundary exposed by the game. It verifies session start, movement, jump, pause, nearby retry, and page errors. Chrome is the supported browser; other browsers are not claimed.
 
-For a local smoke check, run `npm ci`, install the Playwright browser with `npx playwright install chromium`, serve the export, and run `node browser-check.cjs`. CI performs these steps automatically on every push and pull request.
+For a local or deployed smoke check, run `npm ci`, install the Playwright browser with `npx playwright install chromium`, serve the export, and run `node browser-check.cjs`. The browser check is intentionally manual until the export workflow is ready to be maintained in CI.
 
 ## Separation of concerns
 
