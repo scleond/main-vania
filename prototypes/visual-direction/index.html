@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- THROWAWAY: compare three original art directions. Not game code or an animation proof. -->
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spirit art — direction experiment</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#14171c;color:#eee9df;font:16px/1.5 system-ui,sans-serif;padding:28px 24px 110px}main{max-width:1280px;margin:auto}header{max-width:800px;margin-bottom:24px}small{color:#beb5a5;letter-spacing:.12em}h1{font-size:clamp(26px,4vw,42px);line-height:1.15;margin:10px 0}p{color:#c6c8cd}a{color:#f0c996}button{font:inherit;border:1px solid #525760;background:#252b34;color:#f5eee5;border-radius:8px;padding:8px 14px;cursor:pointer}button:hover,button[aria-pressed=true]{background:#4b463d;border-color:#d9b782}button:focus-visible,a:focus-visible{outline:3px solid #e8bd75;outline-offset:3px}.controls{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.viewport{overflow:auto;border:1px solid #424850;border-radius:12px;background:#20252c}img{display:block;width:100%;height:auto;max-width:none}img.reduced{width:768px}.pixel{image-rendering:pixelated}#note{min-height:3em;max-width:880px}.switcher{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:#eee7da;color:#22262d;padding:10px;border-radius:14px;box-shadow:0 8px 40px #0008;max-width:calc(100% - 24px)}#label{min-width:170px;text-align:center;font-weight:650}.switcher button{padding:8px 13px}footer{margin-top:20px;font-size:14px}.state{font-size:14px;color:#c1bcae}@media(max-width:600px){body{padding:16px 12px 110px}.switcher{gap:6px}#label{min-width:140px;font-size:14px}}
+</style>
+<main>
+<header><small>ORIGINAL ART · THROWAWAY EXPERIMENT</small><h1>One spirit. Three directions.</h1><p>Compare the neutral spirit, Ember upgrade, mixed evolution, and guardian copy. The lower scene previews each treatment at a smaller scale. These are generated concept paintings, not usable sprite sheets or tested game footage.</p></header>
+<div class="controls" aria-label="Art directions"><button data-variant="A">A · Inked cutout</button><button data-variant="B">B · Detailed pixel art</button><button data-variant="C">C · Soft painted</button></div>
+<p id="note"></p>
+<div class="controls" aria-label="Comparison size"><button id="fit" aria-pressed="true">Fit viewer</button><button id="reduced" aria-pressed="false">768 px sheet</button><a id="original" target="_blank" rel="noopener">Open original image</a></div>
+<div class="viewport"><img id="sheet" width="1536" height="1024" alt=""></div>
+<p id="state" class="state" aria-live="polite"></p>
+<footer><p>Look for: a recognizable base spirit, readable elemental body parts, player/copy distinction, and details that disappear at smaller sizes. Animation, exact sprite resolution, and modular source assets still need their own experiment.</p><a href="prompts.json">Exact prompts and generation method</a> · <a href="https://github.com/scleond/main-vania/issues/6">Visual-direction decision</a></footer>
+</main>
+<nav class="switcher" aria-label="Cycle art directions"><button id="previous" aria-label="Previous direction">←</button><span id="label"></span><button id="next" aria-label="Next direction">→</button></nav>
+<script>
+const variants={
+ A:{name:'Inked cutout',file:'a-inked-cutout.png',note:'Bold contours and distinct body parts. The concept suggests a modular approach, but separate layers and animation have not been made.'},
+ B:{name:'Detailed pixel art',file:'b-detailed-pixel-art.png',note:'Pixel-style texture with expressive upgrades. This generated sheet does not establish a consistent sprite grid; actual pixel cleanup and animation remain untested.'},
+ C:{name:'Soft painted',file:'c-soft-painted.png',note:'Soft shading and atmospheric scenery. Fine texture and small elemental details are less distinct in the miniature scene; production effort is still unmeasured.'}
+};
+const keys=Object.keys(variants),sheet=document.querySelector('#sheet');
+let current=new URLSearchParams(location.search).get('variant')||'B';
+if(!variants[current])current='A';
+let reduced=false;
+function render(){const v=variants[current];sheet.src=v.file;sheet.alt=`${current}: ${v.name}. Neutral, Ember, mixed, and mirror spirit studies above a small side-scrolling scene.`;sheet.className=(reduced?'reduced ':'')+(current==='B'?'pixel':'');document.querySelector('#note').textContent=v.note;document.querySelector('#label').textContent=`${current} · ${v.name}`;document.querySelector('#original').href=v.file;document.querySelectorAll('[data-variant]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.variant===current)));document.querySelector('#state').textContent=`Direction ${current} · ${v.name} · ${reduced?'768 px wide sheet; scroll if needed':'Fits viewer'} · Still images · B selected · Low-frame-count animation direction`;document.querySelector('#fit').setAttribute('aria-pressed',String(!reduced));document.querySelector('#reduced').setAttribute('aria-pressed',String(reduced));}
+function choose(key){current=key;const url=new URL(location.href);url.searchParams.set('variant',current);history.replaceState(null,'',url);render();}
+function cycle(delta){choose(keys[(keys.indexOf(current)+delta+keys.length)%keys.length]);}
+document.querySelectorAll('[data-variant]').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.variant)));
+document.querySelector('#previous').onclick=()=>cycle(-1);document.querySelector('#next').onclick=()=>cycle(1);
+document.querySelector('#fit').onclick=()=>{reduced=false;render();};document.querySelector('#reduced').onclick=()=>{reduced=true;render();};
+document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,[contenteditable]'))return;if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();cycle(e.key==='ArrowLeft'?-1:1);}});
+render();
+</script>
+</html>
