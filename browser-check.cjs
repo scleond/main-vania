@@ -25,16 +25,30 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
     const starting = await read();
     await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
     const moved = await read();
-    await page.keyboard.press('j'); await page.waitForTimeout(50);
+    const actionStartedAt = await page.evaluate(() => performance.now());
+    await page.keyboard.press('j');
+    await page.waitForFunction(() => window.__vania_probe.attack_active, null, { timeout: 500 });
+    const active = await read();
+    await page.waitForFunction(() => !window.__vania_probe.attack_active, null, { timeout: 1000 });
+    const actionDurationMs = await page.evaluate(startedAt => performance.now() - startedAt, actionStartedAt);
     const acted = await read();
-    return { movement: moved.x - starting.x, actions: acted.attack - starting.attack };
+    return {
+      movement: moved.x - starting.x,
+      actions: acted.attack - starting.attack,
+      attackStarted: active.attack_active,
+      attackDurationMs,
+    };
   };
   const defaultOutcome = await exercisePresentation('default');
   const alternateOutcome = await exercisePresentation('alternate');
-  check('presentation preserves movement and action outcomes',
+  check('presentation preserves movement and action timing',
     defaultOutcome.movement > 20 && alternateOutcome.movement > 20 &&
     Math.abs(defaultOutcome.movement - alternateOutcome.movement) < 5 &&
-    defaultOutcome.actions === 1 && alternateOutcome.actions === 1,
+    defaultOutcome.actions === 1 && alternateOutcome.actions === 1 &&
+    defaultOutcome.attackStarted && alternateOutcome.attackStarted &&
+    defaultOutcome.attackDurationMs > 160 && defaultOutcome.attackDurationMs < 420 &&
+    alternateOutcome.attackDurationMs > 160 && alternateOutcome.attackDurationMs < 420 &&
+    Math.abs(defaultOutcome.attackDurationMs - alternateOutcome.attackDurationMs) < 80,
     { default: defaultOutcome, alternate: alternateOutcome });
   state = await read(); check('keyboard movement', state.x > 90, state);
   const startY = state.y; await page.keyboard.press('Space');

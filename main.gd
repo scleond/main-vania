@@ -256,7 +256,7 @@ func _process(_delta):
  refresh()
  pause_label.visible=paused
  if OS.has_feature('web'):
-  JavaScriptBridge.eval('window.__vania_probe = '+JSON.stringify({'ready':true,'playing':playing,'choosing':choosing,'paused':paused,'hp':hp,'souls':souls,'upgrade':upgrade,'mixed':mixed,'wave':wave,'kills':kills,'deaths':deaths,'retries':retries,'x':player.position.x,'y':player.position.y,'attack':player.attack_id,'presentation':'alternate' if player.visual.alternate_presentation else 'default','actions':{'move':'left/right','jump':'jump','dash':'dash','pause':'pause','retry':'retry'}}))
+  JavaScriptBridge.eval('window.__vania_probe = '+JSON.stringify({'ready':true,'playing':playing,'choosing':choosing,'paused':paused,'hp':hp,'souls':souls,'upgrade':upgrade,'mixed':mixed,'wave':wave,'kills':kills,'deaths':deaths,'retries':retries,'x':player.position.x,'y':player.position.y,'attack':player.attack_id,'attack_active':player.attack_left>0,'attack_remaining':player.attack_left,'presentation':'alternate' if player.visual.alternate_presentation else 'default','actions':{'move':'left/right','jump':'jump','dash':'dash','pause':'pause','retry':'retry'}}))
  queue_redraw()
 func _notification(what):
  if what==NOTIFICATION_APPLICATION_FOCUS_OUT and playing:paused=true
