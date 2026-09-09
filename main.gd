@@ -251,7 +251,7 @@ func _physics_process(delta):
  particles=particles.filter(func(p):return p.time<0.65)
 func refresh():
  hud.text='Health %.1f / 6   |   Ember souls %s   |   %s' % [hp,(str(souls)+' / 8') if upgrade=='' else str(souls),'Neutral' if upgrade=='' else ('Searing Claws' if upgrade=='burn' else 'Flame Arc')]
- status.text=message if message_left>0 else ('Mixed preview ON: Stone + Wind  |  Wave %d' % wave if mixed else 'Wave %d  |  One earned upgrade in this experiment' % wave)
+ status.text=message if message_left>0 else ('Mixed preview ON: Stone + Wind  |  Wave %d' % wave if mixed else 'Wave %d  |  One earned upgrade available' % wave)
 func _process(_delta):
  refresh()
  pause_label.visible=paused

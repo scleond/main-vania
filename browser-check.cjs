@@ -15,11 +15,28 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   await page.keyboard.press('Enter');
   let state = await read();
   check('session starts', state.playing, state);
-  await page.keyboard.press('p'); await page.waitForTimeout(100); state = await read();
-  check('alternate presentation is selectable', state.presentation === 'alternate', state);
-  const startX = state.x;
-  await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
-  state = await read(); check('keyboard movement', state.x > startX + 20, state);
+  const exercisePresentation = async presentation => {
+    state = await read();
+    if (state.presentation !== presentation) {
+      await page.keyboard.press('p'); await page.waitForTimeout(100); state = await read();
+    }
+    check(`${presentation} presentation is selectable`, state.presentation === presentation, state);
+    await page.keyboard.press('k'); await page.waitForTimeout(150);
+    const starting = await read();
+    await page.keyboard.down('d'); await page.waitForTimeout(350); await page.keyboard.up('d');
+    const moved = await read();
+    await page.keyboard.press('j'); await page.waitForTimeout(50);
+    const acted = await read();
+    return { movement: moved.x - starting.x, actions: acted.attack - starting.attack };
+  };
+  const defaultOutcome = await exercisePresentation('default');
+  const alternateOutcome = await exercisePresentation('alternate');
+  check('presentation preserves movement and action outcomes',
+    defaultOutcome.movement > 20 && alternateOutcome.movement > 20 &&
+    Math.abs(defaultOutcome.movement - alternateOutcome.movement) < 5 &&
+    defaultOutcome.actions === 1 && alternateOutcome.actions === 1,
+    { default: defaultOutcome, alternate: alternateOutcome });
+  state = await read(); check('keyboard movement', state.x > 90, state);
   const startY = state.y; await page.keyboard.press('Space');
   await page.waitForFunction(y => window.__vania_probe.y < y - 5, startY);
   state = await read(); check('keyboard jump', state.y < startY - 5, state);
