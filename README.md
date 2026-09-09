@@ -1,29 +1,28 @@
-# Throwaway spirit animation workshop
+# Throwaway Ember combat/evolution slice
 
-Can short pixel animations carry cumulative elemental attachments without drawing each build combination?
+Question: do approachable movement/combat and the first earned elemental upgrade feel rewarding enough to expand?
 
-Run `python3 -m http.server 8772 --directory docs --bind 127.0.0.1`, then open http://127.0.0.1:8772/?variant=A in Chrome. Or open project.godot in Godot 4.7.2 and run the scene.
+Open the locally served export in Chrome. Run `python3 -m http.server 8774 --directory docs --bind 127.0.0.1`, then visit http://127.0.0.1:8774/. Alternatively open project.godot in Godot 4.7.2 and run.
 
-I/R/S select four-frame idle, six-frame run, four-frame swipe. Space pauses; period steps. Keys 1–5 toggle mixed-build elements; the guardian copy uses the same parts. A shows anchors. V compares frame poses with a fixed-pose procedural bob; `?variant=B` opens that comparison. The latter is a deliberately cheap alternative, not a completed skeletal cutout implementation. Top row enlarges the sprites; bottom row shows the roughly 48-pixel body at gameplay scale.
+## Try it
 
-## Source and export workflow
+- Enter starts. A/D or arrows move, Space jumps, J/X swipes, Shift dashes.
+- Fight small groups: three groups of two easy enemies, then one medium. Easy enemies grant one soul; medium two. The room repeats so retries and post-upgrade comparisons remain possible.
+- Earn eight Ember souls to pause and choose Searing Claws (1) or Flame Arc (2). Burn damages enemies over time; Arc extends the swipe. Both show the shared Ember attachments. This experiment implements only the first selection; subsequent souls are retained against the next threshold but no second level-up is offered.
+- M toggles a clearly labeled Stone/Wind preview: reduced damage, one air jump and shorter dash cooldown, with layered parts. This does not spend souls or stand in for the final progression rules.
+- E rests near the glowing checkpoint. K triggers a nearby respawn for comparison. Death/rest repopulate the room and retain earned souls/upgrade. N starts fresh to try the other choice. Escape pauses; losing focus pauses.
+- Session state only: refreshing or closing resets the experiment. Browser-save feasibility was tested separately; this is not a new production save system.
 
-Original B concept -> built-in image generation of pose/accessory atlas -> background correction using built-in image editing -> explicit source rectangles and per-pose anchors in spirit.gd -> nearest-filtered Godot Compatibility web rendering. No downloaded/purchased art pack, new editor dependency, or generated full sprite set for each build. Exact generation prompts are in prompts.json. assets/spirit-atlas-magenta.png is the preserved source. The shader removes magenta at runtime; the source is RGB, not a transparent production atlas.
+One particle per soul depicts reward quantity. Rewards are credited immediately and the particles are cosmetic; the choice waits briefly so their travel is visible. Exact particle treatment remains deferred. The medium is larger, has more health and a longer warning/charge/recovery. Orange ground warnings indicate attack direction; a blue dot indicates recovery. Dash briefly avoids damage. Timing and damage are provisional, not accepted balance.
 
-The body has fourteen pose slots. Six accessory regions supply the five elemental motifs. Every displayed form reuses these assets, including the tinted guardian. First acquisitions are demonstrated; repeat-rank visual scaling and distinct visuals for both paths per element are not yet demonstrated. Per-frame hand anchors move the Ember claw; head/chest/rear anchors are approximate and need further cleanup. Large and gameplay views share the same compositing code.
+Gamepad mappings exist (left stick, A jump, X swipe, right shoulder dash); hardware remains unverified. No audio, shrine, miniboss, other native enemy elements, full upgrade tree, enemy modifiers, guardian, or whole-world pacing is demonstrated.
 
-The generated grid was imperfect and its first claimed transparency was a painted checkerboard. Explicit rectangles avoid cell clipping. The correction preserved usable poses but did not establish a clean common logical pixel grid. The 48-pixel display is sampled from a larger source; final production needs a deliberately cleaned native-resolution atlas. Idle poses are very similar, and the run has some head/body drift. Wind fins were reduced after Chrome inspection to keep the feet clearer. Guardian recoloring makes ownership distinct while retaining the exact parts.
+## Sources and scope
 
-## Evidence and proposed decision
+Godot 4.7.2/GDScript, Compatibility, non-threaded web export. Original draft spirit atlas and modular renderer reused from the animation experiment. Enemies/environment are deliberately simple original code-drawn placeholders. The atlas still needs production cleanup. No new art polish was undertaken.
 
-Chrome automation loaded the export without recorded console or page errors, captured run/swipe screenshots, and exercised animation selection, frame stepping, elemental toggles and A/B mode. This is visual prototype inspection, not a production test suite or evidence of final combat performance. See evidence/animation-*.png. Browser-feasibility evidence inherited from the parent branch is separate and does not validate these new sprites.
+main.gd holds the disposable room, encounters and session state. player.gd handles movement/swipe and uses visual.gd for the shared draft art. The inherited art prompts identify the generated source. Prior evidence on this branch relates to earlier experiments; see FEEL-EVIDENCE.md for this slice.
 
-Proposed workflow: low-frame body poses plus reusable attachments, with manual alignment/pixel cleanup before production. Plan on fourteen cleaned base pose slots for this subset, attachment anchor checks on every slot, and extra work for jumping, falling, hurt, death, transformation and attack effects. We have no measured production-hours estimate yet. Pure procedural bob saves pose work but cannot express the swipe or running stride on its own. A full cutout rig was not built and is not ruled out by this experiment.
+Re-export: `python3 export.py --godot /path/to/Godot --templates /path/to/templates`, using matching web_nothreads templates. build/ is fresh output; docs/ is the captured web export.
 
-User feedback is required before resolving [Prove an original character animation workflow](https://github.com/scleond/main-vania/issues/3). In particular, judge animation cadence, mixed silhouette and player/copy distinction at gameplay size. This is not the complete production asset inventory or a final visual-quality acceptance.
-
-## Re-export
-
-`python3 export.py --godot /path/to/Godot --templates /path/to/templates`
-
-Use matching Godot 4.7.2 web_nothreads_debug.zip and web_nothreads_release.zip templates. Fresh output is build/; docs/ captures the current runnable export. No production game changes are on this branch.
+Decision: [Validate the smallest movement combat and evolution slice](https://github.com/scleond/main-vania/issues/8). Human feedback is required before closure. Check responsiveness, warning/recovery fairness, soul readability, the difference after upgrading, and mixed-form clarity. This is a disposable decision experiment, not a production scaffold.

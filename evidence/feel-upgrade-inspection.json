@@ -1,0 +1,138 @@
+[
+  {
+    "choice": "1",
+    "errors": [],
+    "sawMedium": true,
+    "sawBurn": true,
+    "earned": {
+      "attack": 33,
+      "choosing": true,
+      "deaths": 0,
+      "enemies": [],
+      "hp": 2,
+      "kills": 7,
+      "mixed": true,
+      "paused": false,
+      "playing": true,
+      "ready": true,
+      "souls": 8,
+      "upgrade": "",
+      "wave": 4,
+      "x": 432.250579833984,
+      "y": 299.92529296875
+    },
+    "selected": "burn",
+    "final": {
+      "attack": 50,
+      "choosing": false,
+      "deaths": 1,
+      "enemies": [
+        {
+          "burn": 1.91666666666667,
+          "burn_tick": 0.283333333333333,
+          "dir": -1,
+          "flash": 0,
+          "hit_id": 50,
+          "hp": 2,
+          "max_hp": 3,
+          "medium": false,
+          "mode": "warn",
+          "timer": 0.183333333333333,
+          "x": 293.666666666665
+        },
+        {
+          "burn": 0,
+          "burn_tick": 0,
+          "dir": -1,
+          "flash": 0,
+          "hit_id": -1,
+          "hp": 3,
+          "max_hp": 3,
+          "medium": false,
+          "mode": "approach",
+          "timer": -1.76666666666667,
+          "x": 555
+        }
+      ],
+      "hp": 6,
+      "kills": 10,
+      "mixed": true,
+      "paused": true,
+      "playing": true,
+      "ready": true,
+      "souls": 3,
+      "upgrade": "burn",
+      "wave": 1,
+      "x": 271.250183105469,
+      "y": 299.92529296875
+    }
+  },
+  {
+    "choice": "2",
+    "errors": [],
+    "sawMedium": true,
+    "sawBurn": false,
+    "earned": {
+      "attack": 33,
+      "choosing": true,
+      "deaths": 0,
+      "enemies": [],
+      "hp": 2,
+      "kills": 7,
+      "mixed": true,
+      "paused": false,
+      "playing": true,
+      "ready": true,
+      "souls": 8,
+      "upgrade": "",
+      "wave": 4,
+      "x": 436.083251953125,
+      "y": 299.92529296875
+    },
+    "selected": "arc",
+    "final": {
+      "attack": 51,
+      "choosing": false,
+      "deaths": 1,
+      "enemies": [
+        {
+          "burn": 0,
+          "burn_tick": 0,
+          "dir": -1,
+          "flash": 0,
+          "hit_id": 51,
+          "hp": 2,
+          "max_hp": 3,
+          "medium": false,
+          "mode": "warn",
+          "timer": 0.2,
+          "x": 293.666666666665
+        },
+        {
+          "burn": 0,
+          "burn_tick": 0,
+          "dir": -1,
+          "flash": 0,
+          "hit_id": -1,
+          "hp": 3,
+          "max_hp": 3,
+          "medium": false,
+          "mode": "approach",
+          "timer": -1.86666666666666,
+          "x": 555
+        }
+      ],
+      "hp": 6,
+      "kills": 10,
+      "mixed": true,
+      "paused": true,
+      "playing": true,
+      "ready": true,
+      "souls": 3,
+      "upgrade": "arc",
+      "wave": 1,
+      "x": 269.333526611328,
+      "y": 299.92529296875
+    }
+  }
+]
