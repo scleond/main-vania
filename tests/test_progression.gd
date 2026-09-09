@@ -22,7 +22,7 @@ func fresh():
 	return Progression.new()
 
 func earn_to(p, total):
-	# Earn ember souls until lifetime reaches total (test helper only).
+	# Earn ember numen until lifetime reaches total (test helper only).
 	while p.lifetime < total:
 		p.earn('ember', 1)
 
@@ -32,7 +32,7 @@ func _initialize():
 	check('initial threshold is 8', p.next_threshold() == 8, str(p.next_threshold()))
 	check('initial requirement is 8', p.window_requirement() == 8, str(p.window_requirement()))
 	p.earn('ember', 8)
-	check('8 souls unlock one level-up', p.pending_level_ups() == 1, str(p.pending_level_ups()))
+	check('8 numen unlock one level-up', p.pending_level_ups() == 1, str(p.pending_level_ups()))
 	check('offer is Ember paths', p.offer()['kind'] == 'paths' and p.offer()['element'] == 'ember', str(p.offer()))
 	check('select searing_claws', p.select_path('searing_claws'), 'rejected')
 	check('selection consumed, window empty', p.window_total() == 0 and p.pending_level_ups() == 0, '%d/%d' % [p.window_total(), p.pending_level_ups()])
@@ -72,7 +72,7 @@ func _initialize():
 	check('overflow carries 2 typed ember', p.window_total() == 2 and p.window_counts()['ember'] == 2, str(p.window_counts()))
 	check('next window needs 6', p.window_requirement() == 6, str(p.window_requirement()))
 
-	# --- Mixed overflow keeps elements: storm souls survive consumption order ---
+	# --- Mixed overflow keeps elements: storm numen survive consumption order ---
 	p = fresh()
 	p.earn('storm', 5)
 	p.earn('ember', 3)
@@ -101,7 +101,7 @@ func _initialize():
 	check('no next threshold at cap', p.next_threshold() == -1, str(p.next_threshold()))
 	var frozen = p.window_total()
 	p.earn('ember', 5)
-	check('no souls accumulate at cap', p.window_total() == frozen and p.pending_level_ups() == 0, '%d/%d' % [p.window_total(), p.pending_level_ups()])
+	check('no numen accumulate at cap', p.window_total() == frozen and p.pending_level_ups() == 0, '%d/%d' % [p.window_total(), p.pending_level_ups()])
 	check('offer none at cap', p.offer()['kind'] == 'none', str(p.offer()))
 	check('select rejected at cap', not p.select_path('searing_claws'), 'allowed over cap')
 
@@ -129,7 +129,7 @@ func _initialize():
 	check('burn grows per rank', Tuning.burn_duration(8) > Tuning.burn_duration(1), str(Tuning.burn_duration(8)))
 	check('no-claws means no ignite', Tuning.burn_duration(0) == 0.0, str(Tuning.burn_duration(0)))
 	check('warn/recover readable', Tuning.EASY_WARN_DURATION > 0.0 and Tuning.MEDIUM_WARN_DURATION > Tuning.EASY_WARN_DURATION and Tuning.MEDIUM_RECOVER_DURATION > Tuning.EASY_RECOVER_DURATION, 'timings')
-	check('medium worth two souls, easy one', Tuning.MEDIUM_SOULS == 2 and Tuning.EASY_SOULS == 1, 'rewards')
+	check('medium worth two numen, easy one', Tuning.MEDIUM_NUMEN == 2 and Tuning.EASY_NUMEN == 1, 'rewards')
 	check('threshold ladder exact', Progression.THRESHOLDS == [8, 14, 20, 26, 30, 34, 38, 42] and Progression.SELECTION_CAP == 8, 'ladder')
 
 	# --- Presentation separation: alternate swipe set differs in frame count ---

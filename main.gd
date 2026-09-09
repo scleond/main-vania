@@ -3,7 +3,7 @@ extends Node2D
 # Progression rules live in progression.gd (earning windows, thresholds, ties,
 # overflow, repeatable ranks, eight-selection cap). Gameplay numbers live in
 # tuning.gd. visual.gd is presentation-only. Death/rest restores encounters and
-# health at the checkpoint while retaining souls and upgrades; this room has no
+# health at the checkpoint while retaining numen and upgrades; this room has no
 # room transitions, and crossing boundaries would not reset encounters either.
 const Tuning = preload('res://tuning.gd')
 const Progression = preload('res://progression.gd')
@@ -13,7 +13,7 @@ const LEGACY_NAMES := {'searing_claws': 'burn', 'flame_arc': 'arc'}
 var progression
 var player
 var hp = 6.0
-var souls = 0
+var numen = 0
 var upgrade = ''
 var mixed = false
 var playing = false
@@ -140,7 +140,7 @@ func start_run():
 
 func respawn(count = true):
 	# Death/rest checkpoint restore: encounters and health reset, while earned
-	# souls, window position, ranks, and selections are retained. Room
+	# numen, window position, ranks, and selections are retained. Room
 	# transitions alone never call this, so they never reset encounters.
 	if count:
 		deaths += 1
@@ -156,7 +156,7 @@ func respawn(count = true):
 	enemies.clear()
 	wave = 0
 	wave_wait = Tuning.WAVE_WAIT_INITIAL
-	note('Checkpoint restored. Souls and upgrades retained.' if count else 'Defeat the Ember creatures. Earn souls toward evolution.')
+	note('Checkpoint restored. Numen and upgrades retained.' if count else 'Defeat the Ember creatures. Earn numen toward evolution.')
 
 func note(value):
 	message = value
@@ -173,7 +173,7 @@ func arc_rank():
 
 func sync_derived():
 	# Legacy probe/HUD fields derived from the rule model.
-	souls = progression.window_total()
+	numen = progression.window_total()
 	if burn_rank() > 0 or arc_rank() > 0:
 		upgrade = 'burn' if burn_rank() >= arc_rank() else 'arc'
 	else:
@@ -340,11 +340,11 @@ func _physics_process(delta):
 	var living = []
 	for enemy in enemies:
 		if enemy.hp <= 0:
-			var reward = Tuning.MEDIUM_SOULS if enemy.medium else Tuning.EASY_SOULS
+			var reward = Tuning.MEDIUM_NUMEN if enemy.medium else Tuning.EASY_NUMEN
 			progression.earn('ember', reward)
 			kills += 1
 			choice_delay = Tuning.CHOICE_DELAY
-			# Graphical quantities: one particle per soul earned.
+			# Graphical quantities: one particle per numen earned.
 			for i in range(reward):
 				particles.append({'start': Vector2(enemy.x + i * 12, 277 - i * 8), 'time': 0.0})
 			wave_wait = Tuning.WAVE_WAIT_AFTER_KILL
@@ -371,7 +371,7 @@ func refresh_choice_panel():
 	if current['kind'] == 'elements':
 		choice_mode = 'elements'
 		choice_title.text = 'EVOLVE / tied elements'
-		choice_detail.text = 'Souls tie for the lead. Choose which element to evolve first. Play is paused.'
+		choice_detail.text = 'Numen tie for the lead. Choose which element to evolve first. Play is paused.'
 		var tied = current['elements']
 		for i in range(slot_buttons.size()):
 			slot_buttons[i].text = '%d · %s' % [i + 1, String(tied[i]).capitalize()] if i < tied.size() else '—'
@@ -391,12 +391,12 @@ func refresh():
 	if progression.is_fully_evolved():
 		hud.text = 'Health %.1f / %d   |   Fully evolved %d/%d   |   Claws r%d · Arc r%d' % [hp, int(Tuning.PLAYER_MAX_HP), progression.selections, Progression.SELECTION_CAP, burn_rank(), arc_rank()]
 	elif requirement > 0:
-		hud.text = 'Health %.1f / %d   |   Ember souls %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), souls, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
+		hud.text = 'Health %.1f / %d   |   Ember numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	else:
 		hud.text = 'Health %.1f / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	if choosing:
 		refresh_choice_panel()
-	status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d souls' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — progression souls rest' % wave)
+		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — progression numen rest' % wave)
 	if mixed:
 		status.text += '  |  Mixed preview ON'
 
@@ -412,8 +412,8 @@ func _process(_delta):
 	if OS.has_feature('web'):
 		JavaScriptBridge.eval('window.__vania_probe = ' + JSON.stringify({
 			'ready': true, 'playing': playing, 'choosing': choosing, 'paused': paused,
-			'hp': hp, 'souls': souls, 'upgrade': upgrade, 'mixed': mixed,
-			'souls_window': progression.window_total(), 'window_counts': progression.window_counts(),
+			'hp': hp, 'numen': numen, 'upgrade': upgrade, 'mixed': mixed,
+			'numen_window': progression.window_total(), 'window_counts': progression.window_counts(),
 			'next_threshold': progression.next_threshold(), 'window_requirement': progression.window_requirement(),
 			'selections': progression.selections, 'pending': progression.pending_level_ups(),
 			'dominant': progression.dominant_elements(), 'fully_evolved': progression.is_fully_evolved(),

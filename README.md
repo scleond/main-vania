@@ -22,10 +22,10 @@ power in the game was once someone else's nature.
 ## What's playable now
 
 A single Ember combat-room slice: the Neutral Spirit, easy lunge and medium
-charge enemies with warnings/recovery, auto-collected graphical souls, paused
+charge enemies with warnings/recovery, auto-collected graphical numen, paused
 Ember choices (Searing Claws burn / Flame Arc reach, repeatable to rank 8),
 the shared earning-window ladder (thresholds 8–42, eight-selection cap with a
-Fully evolved state), and checkpoint retry that retains souls and upgrades.
+Fully evolved state), and checkpoint retry that retains numen and upgrades.
 It's the feel foundation the rest of the game builds on.
 
 ## Run it

@@ -60,12 +60,12 @@ func _initialize():
 
 	# --- Earned choice: 8 easy souls pause play and offer Ember paths ---
 	for i in range(8):
-		m.progression.earn('ember', Tuning.EASY_SOULS)
+		m.progression.earn('ember', Tuning.EASY_NUMEN)
 	m.choice_delay = 0.0
 	step(m, 0.05)
 	check('8 souls pause for choice', m.choosing, 'not choosing')
 	check('session offers two Ember paths', m.progression.session_offer()['paths'].size() == 2, str(m.progression.session_offer()))
-	check('legacy souls mirror window', m.souls == 8, str(m.souls))
+	check('numen mirror window', m.numen == 8, str(m.numen))
 	m.select_upgrade('burn')
 	check('Searing Claws rank 1 applies', m.burn_rank() == 1 and not m.choosing, 'r=%d choosing=%s' % [m.burn_rank(), str(m.choosing)])
 	check('burn duration tuned to 2.2s', Tuning.burn_duration(m.burn_rank()) == 2.2, str(Tuning.burn_duration(m.burn_rank())))
@@ -73,13 +73,13 @@ func _initialize():
 
 	# --- Second window (6 souls) offers Flame Arc reach ---
 	for i in range(6):
-		m.progression.earn('ember', Tuning.EASY_SOULS)
+		m.progression.earn('ember', Tuning.EASY_NUMEN)
 	m.choice_delay = 0.0
 	step(m, 0.05)
 	check('second window pauses again', m.choosing, 'not choosing')
 	m.select_upgrade('arc')
 	check('Flame Arc rank 1 widens reach', m.arc_rank() == 1 and Tuning.swipe_reach(m.arc_rank()) == 58.0, 'r=%d reach=%s' % [m.arc_rank(), str(Tuning.swipe_reach(m.arc_rank()))])
-	check('medium reward is two souls graphically', Tuning.MEDIUM_SOULS == 2, 'reward')
+	check('medium reward is two numen graphically', Tuning.MEDIUM_NUMEN == 2, 'reward')
 
 	# --- Death retains souls/upgrades, restores health + encounters ---
 	var selections = m.progression.selections

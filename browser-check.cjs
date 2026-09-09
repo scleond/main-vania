@@ -58,7 +58,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   await page.keyboard.press('k'); await page.waitForTimeout(150); state = await read();
   check('nearby retry boundary', state.retries >= 1 && Math.abs(state.x - 70) < 8, state);
-  // Earn an Ember choice through real combat (no debug grant): steer to the
+  // Earn a numen choice through real combat (no debug grant): steer to the
   // nearest living enemy and swipe until the paused choice opens, then pick
   // Searing Claws and confirm the burn rank applies with a visible change.
   const deadline = Date.now() + 150000;
@@ -79,7 +79,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
     }
   }
   state = await read();
-  check('combat earns a paused Ember choice', !!state.choosing, state);
+  check('combat earns a paused numen choice', !!state.choosing, state);
   check('session offers two Ember paths', state.offer_kind === 'paths', state);
   await page.keyboard.press('1'); await page.waitForTimeout(200); state = await read();
   check('Searing Claws applies burn rank', !state.choosing && state.burn_rank === 1 && state.burn_duration > 0 && state.upgrade === 'burn', state);

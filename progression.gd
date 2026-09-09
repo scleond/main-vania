@@ -1,11 +1,11 @@
 extends RefCounted
 ## Shared earning-window progression rules (issue #20).
 ##
-## Souls earned since the previous level-up form the current earning window.
+## Numen earned since the previous level-up form the current earning window.
 ## Cumulative lifetime totals unlock level-ups at THRESHOLDS; selecting an
 ## upgrade consumes one window requirement from the front of the queue while
-## excess souls keep their elements for the next window. After SELECTION_CAP
-## selections the spirit is Fully evolved and progression souls stop
+## excess numen keep their elements for the next window. After SELECTION_CAP
+## selections the spirit is Fully evolved and progression numen stop
 ## accumulating. All ten paths of the five elements live in PATH_CATALOG so
 ## later slices can reuse this model; the session UI gates offers to Ember.
 const ELEMENTS: Array = ['ember', 'storm', 'thorn', 'stone', 'wind']
@@ -68,7 +68,7 @@ func next_threshold() -> int:
 	return int(THRESHOLDS[mini(selections, THRESHOLDS.size() - 1)])
 
 
-## Souls consumed from the window by the next selection.
+## Numen consumed from the window by the next selection.
 func window_requirement() -> int:
 	if is_fully_evolved():
 		return 0
@@ -84,12 +84,12 @@ func window_counts() -> Dictionary:
 	var counts := {}
 	for element in ELEMENTS:
 		counts[element] = 0
-	for soul in window_queue:
-		counts[soul] = int(counts.get(soul, 0)) + 1
+	for numen in window_queue:
+		counts[numen] = int(counts.get(numen, 0)) + 1
 	return counts
 
 
-## Earn souls into the window. Ignored once Fully evolved. Returns pending.
+## Earn numen into the window. Ignored once Fully evolved. Returns pending.
 func earn(element: String, amount: int) -> int:
 	if is_fully_evolved():
 		return pending_level_ups()
@@ -103,7 +103,7 @@ func earn(element: String, amount: int) -> int:
 	return pending_level_ups()
 
 
-## Elements tied for the most window souls (empty when the window is empty).
+## Elements tied for the most window numen (empty when the window is empty).
 func dominant_elements() -> Array:
 	var counts := window_counts()
 	var leaders: Array = []
@@ -165,7 +165,7 @@ func rank_of(path_id: String) -> int:
 
 
 ## Select a repeatable path. Consumes one window requirement, keeps excess
-## typed souls. Returns false when the selection is not currently legal.
+## typed numen. Returns false when the selection is not currently legal.
 func select_path(path_id: String) -> bool:
 	if pending_level_ups() <= 0 or is_fully_evolved():
 		return false
