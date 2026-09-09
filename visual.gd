@@ -17,6 +17,10 @@ var presentation_clock = 0.0
 var idle_boxes = [Rect2(50,24,180,253),Rect2(310,24,175,253),Rect2(565,24,180,253),Rect2(810,24,178,253)]
 var run_boxes = [Rect2(45,286,190,237),Rect2(310,286,175,237),Rect2(565,286,182,237),Rect2(818,286,177,237),Rect2(1080,286,178,237),Rect2(1335,286,182,237)]
 var swipe_boxes = [Rect2(45,550,190,230),Rect2(308,550,226,230),Rect2(563,550,233,230),Rect2(833,550,179,230)]
+# Alternate presentation deliberately uses a different sprite subset and frame
+# count (2 swipe frames instead of 4). Gameplay reads tuning.gd, never these
+# boxes, so attack outcomes stay identical across presentations.
+var swipe_boxes_alt = [Rect2(563,550,233,230),Rect2(833,550,179,230)]
 var head = Vector2(0,-31)
 var chest = Vector2(0,-13)
 var hand = Vector2(12,-10)
@@ -52,6 +56,8 @@ func piece(region:Rect2,where:Vector2,size:Vector2):
 func _draw():
  material.set_shader_parameter('mirror_form',mirror)
  var boxes = [idle_boxes,run_boxes,swipe_boxes][motion]
+ if alternate_presentation and motion==2:
+  boxes=swipe_boxes_alt
  var box:Rect2 = boxes[frame % boxes.size()]
  # Separate body anchor and per-pose hand anchors avoid combinatorial sprites.
  var foot_x = [100.0,90.0,93.0,94.0][frame%4] if motion==0 else 100.0

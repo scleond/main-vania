@@ -21,9 +21,12 @@ power in the game was once someone else's nature.
 
 ## What's playable now
 
-A single movement-room slice: the Neutral Spirit, basic combat, checkpoint
-retry, and a first Ember attunement choice. It's the feel foundation the rest
-of the game builds on.
+A single Ember combat-room slice: the Neutral Spirit, easy lunge and medium
+charge enemies with warnings/recovery, auto-collected graphical souls, paused
+Ember choices (Searing Claws burn / Flame Arc reach, repeatable to rank 8),
+the shared earning-window ladder (thresholds 8–42, eight-selection cap with a
+Fully evolved state), and checkpoint retry that retains souls and upgrades.
+It's the feel foundation the rest of the game builds on.
 
 ## Run it
 
@@ -48,6 +51,13 @@ dash, Esc to pause, E/K to retry near the checkpoint, N for a fresh run.
 - `main.gd` — room, session state, enemies, HUD.
 - `player.gd` — gameplay feel (speed, jump, dash, attack timing).
 - `visual.gd` — presentation only; safe to tweak without changing feel.
+- `tuning.gd` — central gameplay numbers (swipe windows, reach, burn,
+  enemy warn/recovery); edit feel here, never in `visual.gd`.
+- `progression.gd` — earning-window rules (thresholds, ties, overflow,
+  ranks, cap); later elements live in its catalog but only Ember is offered.
+- `tests/test_progression.gd`, `tests/test_session.gd` — focused rule and
+  session cases: `godot --headless --path . --script tests/test_progression.gd`
+  (same for `test_session.gd`).
 - `node browser-check.cjs` — Chrome smoke check (needs `npm ci` and
   `npx playwright install chromium`).
 - `python3 export.py --godot /path/to/Godot --templates /path/to/templates` —
