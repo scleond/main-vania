@@ -1,0 +1,10 @@
+{
+  "browser": "firefox",
+  "source": "local browser automation; not retail Safari",
+  "checks": {},
+  "errors": [
+    "The WebAssembly.Memory object cannot be serialized. The Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy HTTP headers can be used to enable this."
+  ],
+  "status": "failed",
+  "failure": "TimeoutError: page.waitForFunction: Timeout 60000ms exceeded."
+}

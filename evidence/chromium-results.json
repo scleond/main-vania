@@ -1,0 +1,237 @@
+{
+  "browser": "chromium",
+  "source": "local browser automation; not retail Safari",
+  "checks": {
+    "new run": {
+      "pass": true,
+      "detail": {
+        "audio_playing": false,
+        "engine": "4.7.2-stable (official)",
+        "fps": 1,
+        "frames": 9,
+        "gamepads": [],
+        "persistent": true,
+        "playing": true,
+        "ready": true,
+        "save_ok": true,
+        "state": {
+          "checkpoint": [
+            80,
+            270
+          ],
+          "modifiers": {
+            "enemy-1": "Wind"
+          },
+          "shrines": [],
+          "souls": 0,
+          "upgrades": [],
+          "version": 1
+        },
+        "upgraded": false,
+        "x": 80,
+        "y": 280.625
+      }
+    },
+    "movement": {
+      "pass": true,
+      "detail": {
+        "from": 80,
+        "to": 114.499954223633
+      }
+    },
+    "jump": {
+      "pass": true,
+      "detail": {
+        "from": 286.988952636719,
+        "to": 255.716827392578
+      }
+    },
+    "visible upgrade and souls": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          80,
+          270
+        ],
+        "modifiers": {
+          "enemy-1": "Wind"
+        },
+        "shrines": [],
+        "souls": 3,
+        "upgrades": [
+          "Ember"
+        ],
+        "version": 1
+      }
+    },
+    "shrine fixture": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          80,
+          270
+        ],
+        "modifiers": {
+          "enemy-1": "Wind"
+        },
+        "shrines": [
+          "Ember"
+        ],
+        "souls": 3,
+        "upgrades": [
+          "Ember"
+        ],
+        "version": 1
+      }
+    },
+    "respawn": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          114,
+          286
+        ],
+        "x": 114
+      }
+    },
+    "dash": {
+      "pass": true,
+      "detail": {
+        "from": 114,
+        "to": 159.333358764648
+      }
+    },
+    "save written": {
+      "pass": true,
+      "detail": {
+        "audio_playing": false,
+        "engine": "4.7.2-stable (official)",
+        "fps": 61,
+        "frames": 239,
+        "gamepads": [],
+        "persistent": true,
+        "playing": true,
+        "ready": true,
+        "save_ok": true,
+        "state": {
+          "checkpoint": [
+            114,
+            286
+          ],
+          "modifiers": {
+            "enemy-1": "Wind"
+          },
+          "shrines": [
+            "Ember"
+          ],
+          "souls": 3,
+          "upgrades": [
+            "Ember"
+          ],
+          "version": 1
+        },
+        "upgraded": true,
+        "x": 159.333358764648,
+        "y": 286.999938964844
+      }
+    },
+    "reload preserves fixture": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          114,
+          286
+        ],
+        "modifiers": {
+          "enemy-1": "Wind"
+        },
+        "shrines": [
+          "Ember"
+        ],
+        "souls": 3,
+        "upgrades": [
+          "Ember"
+        ],
+        "version": 1
+      }
+    },
+    "browser restart persists fixture": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          114,
+          286
+        ],
+        "modifiers": {
+          "enemy-1": "Wind"
+        },
+        "shrines": [
+          "Ember"
+        ],
+        "souls": 3,
+        "upgrades": [
+          "Ember"
+        ],
+        "version": 1
+      }
+    },
+    "simulated session-only play": {
+      "pass": true,
+      "detail": {
+        "audio_playing": false,
+        "engine": "4.7.2-stable (official)",
+        "fps": 1,
+        "frames": 36,
+        "gamepads": [],
+        "persistent": false,
+        "playing": true,
+        "ready": true,
+        "save_ok": false,
+        "state": {
+          "checkpoint": [
+            80,
+            270
+          ],
+          "modifiers": {
+            "enemy-1": "Wind"
+          },
+          "shrines": [],
+          "souls": 3,
+          "upgrades": [
+            "Ember"
+          ],
+          "version": 1
+        },
+        "upgraded": true,
+        "x": 80,
+        "y": 286.988952636719
+      }
+    },
+    "simulated session-only reload resets": {
+      "pass": true,
+      "detail": {
+        "checkpoint": [
+          80,
+          270
+        ],
+        "modifiers": {
+          "enemy-1": "Wind"
+        },
+        "shrines": [],
+        "souls": 0,
+        "upgrades": [],
+        "version": 1
+      }
+    }
+  },
+  "errors": [],
+  "startupMs": 1001,
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+  "engine": "4.7.2-stable (official)",
+  "frameTimingMs": {
+    "median": 16.699999999999818,
+    "p95": 17.200000000000045,
+    "samples": 120
+  },
+  "status": "passed"
+}

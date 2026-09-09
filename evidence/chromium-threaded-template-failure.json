@@ -1,0 +1,10 @@
+{
+  "browser": "chromium",
+  "source": "local browser automation; not retail Safari",
+  "checks": {},
+  "errors": [
+    "Failed to execute 'postMessage' on 'Worker': SharedArrayBuffer transfer requires self.crossOriginIsolated."
+  ],
+  "status": "failed",
+  "failure": "TimeoutError: page.waitForFunction: Timeout 60000ms exceeded."
+}
