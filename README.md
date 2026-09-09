@@ -1,35 +1,58 @@
-# Neutral spirit movement room
+# Numen
 
-Production vertical slice for issue #19: a small Godot room with keyboard movement, jump, dash, pause, and nearby retry. Gameplay is authored in GDScript and the presentation layer is independently configurable.
+**Numen** is a 2D action-exploration game about a neutral spirit — an unaligned
+vessel drifting through a world of elemental essences. When spirits fall, they
+leave behind **numen**: small sparks of will. Gather them, attune to the
+essences (Ember, Stone, Wind, and more to come), and mix them into your own way
+to fight and move.
 
-## Local run
+The fantasy is simple: you begin with nothing and borrow everything. Every
+power in the game was once someone else's nature.
 
-Install Godot 4.7.2 (the required version is recorded in `.godot-version`; on macOS, `brew install --cask godot`), then open `project.godot` and run the project. You can also serve the checked-in web export:
+## How it plays
+
+- **Explore and fight.** Fast, movement-first combat — jump, dash, and strike
+  through rooms of wild spirits.
+- **Gather numen.** Fallen spirits release sparks; collect enough to grow.
+- **Attune.** Spend numen to take on an elemental essence and change how your
+  attacks behave.
+- **Mix.** Combine essences into hybrid builds (a preview of Stone + Wind
+  exists in the current slice).
+
+## What's playable now
+
+A single movement-room slice: the Neutral Spirit, basic combat, checkpoint
+retry, and a first Ember attunement choice. It's the feel foundation the rest
+of the game builds on.
+
+## Run it
+
+Requires **Godot 4.7.2** (pinned in `.godot-version`) and desktop **Chrome**
+for the web build.
+
+**In the editor** (fastest): open `project.godot` in Godot, press Play,
+then **Enter** in-game.
+
+**In a browser:** serve the checked-in web build and open it in Chrome:
 
 ```sh
 python3 -m http.server 8774 --directory docs --bind 127.0.0.1
+# http://127.0.0.1:8774/ — press Enter to start
 ```
 
-Open `http://127.0.0.1:8774/` in desktop Chrome. Enter starts; A/D or arrows move, Space jumps, Shift dashes, Escape pauses, and E/K retries when near the checkpoint. Controller Start and Back use those same pause/retry actions; hardware controller verification is pending. P swaps to an alternate frame/playback profile, which the smoke check verifies without changing movement outcomes.
+**Controls:** A/D or arrows to move, Space to jump, J/X to attack, Shift to
+dash, Esc to pause, E/K to retry near the checkpoint, N for a fresh run.
 
-## Export and hosted verification
+## For contributors
 
-Install the official Godot 4.7.2 editor and matching `web_nothreads_debug.zip` and `web_nothreads_release.zip` templates. Run:
+- `main.gd` — room, session state, enemies, HUD.
+- `player.gd` — gameplay feel (speed, jump, dash, attack timing).
+- `visual.gd` — presentation only; safe to tweak without changing feel.
+- `node browser-check.cjs` — Chrome smoke check (needs `npm ci` and
+  `npx playwright install chromium`).
+- `python3 export.py --godot /path/to/Godot --templates /path/to/templates` —
+  rebuild the web export; see `docs/EXPORT.md`.
 
-```sh
-python3 export.py --godot /path/to/Godot --templates /path/to/templates
-```
+## License
 
-The script writes ignored `build/` output and preserves the checked-in preset. It also normalizes the Godot loader to the exported `index.wasm` filename. A human can validate the game locally with Godot and validate the export locally by serving `build/`; the hosted check is still useful for the actual GitHub Pages boundary. Deploy the resulting web files to the repository's GitHub Pages route and run the same Chrome smoke check against it:
-
-```sh
-VANIA_URL=https://<owner>.github.io/<repo>/ node browser-check.cjs
-```
-
-The smoke check observes `window.__vania_probe`, the high-level session boundary exposed by the game. It verifies session start, movement, jump, pause, nearby retry, and page errors. Chrome is the supported browser; other browsers are not claimed.
-
-For a local or deployed smoke check, run `npm ci`, install the Playwright browser with `npx playwright install chromium`, serve the export, and run `node browser-check.cjs`. The browser check is intentionally manual until the export workflow is ready to be maintained in CI.
-
-## Separation of concerns
-
-`player.gd` owns collision, movement, jump, dash, action timing, and named gameplay tuning constants. `visual.gd` owns atlas regions, pose sequences, attachment anchors, and presentation playback speeds. Changing its frame arrays or playback speeds cannot alter player physics or action durations. `main.gd` owns the room/session boundary and input mapping.
+MIT — see `LICENSE`.

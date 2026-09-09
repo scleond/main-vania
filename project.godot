@@ -2,7 +2,7 @@
 config_version=5
 
 [application]
-config/name="Spirit feel slice"
+config/name="Numen"
 run/main_scene="res://main.tscn"
 
 [display]
