@@ -144,6 +144,10 @@ func respawn(count = true):
 	# transitions alone never call this, so they never reset encounters.
 	if count:
 		deaths += 1
+		if is_instance_valid(player.visual):
+			player.visual.leave_death_pose(self, player.position)
+	if is_instance_valid(player.visual):
+		player.visual.reset_presentation()
 	hp = Tuning.PLAYER_MAX_HP
 	player.position = CHECKPOINT_POSITION
 	player.velocity = Vector2.ZERO
@@ -278,6 +282,8 @@ func _physics_process(delta):
 	player.arc_rank = arc_rank()
 	player.burn_rank = burn_rank()
 	player.mixed = mixed
+	if is_instance_valid(player.visual):
+		player.visual.playback_paused = not player.active
 	if not player.active:
 		return
 	clock += delta
@@ -336,6 +342,8 @@ func _physics_process(delta):
 			hp -= (Tuning.MEDIUM_DAMAGE if enemy.medium else Tuning.EASY_DAMAGE) * (0.5 if mixed else 1.0)
 			player.invulnerable = Tuning.INVULNERABLE_DURATION
 			player.velocity.y = Tuning.HIT_LAUNCH_Y
+			if hp > 0 and is_instance_valid(player.visual):
+				player.visual.play_hurt()
 			note('Hit! Watch the warning, then punish the recovery.')
 	var living = []
 	for enemy in enemies:

@@ -1,0 +1,836 @@
+{
+  "cell": [
+    64,
+    64
+  ],
+  "motions": {
+    "dash": {
+      "atlas": "spirit-dash.png",
+      "frames": [
+        {
+          "chest": [
+            -0.48,
+            -13.95
+          ],
+          "duration_ms": 30.0,
+          "hand": [
+            -9.52,
+            -14.53
+          ],
+          "head": [
+            2.47,
+            -30.7
+          ],
+          "name": "Drive"
+        },
+        {
+          "chest": [
+            0.12,
+            -13.78
+          ],
+          "duration_ms": 30.0,
+          "hand": [
+            -8.77,
+            -18.45
+          ],
+          "head": [
+            6.49,
+            -29.54
+          ],
+          "name": "Streamline"
+        },
+        {
+          "chest": [
+            0.12,
+            -13.78
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            -8.77,
+            -18.45
+          ],
+          "head": [
+            6.49,
+            -29.54
+          ],
+          "name": "Travel"
+        },
+        {
+          "chest": [
+            -0.48,
+            -13.95
+          ],
+          "duration_ms": 30.0,
+          "hand": [
+            -8.53,
+            -14.36
+          ],
+          "head": [
+            2.47,
+            -30.7
+          ],
+          "name": "Release"
+        }
+      ],
+      "loop": false,
+      "loop_from": 0.0
+    },
+    "death": {
+      "atlas": "spirit-death.png",
+      "frames": [
+        {
+          "chest": [
+            -2.42,
+            -14.97
+          ],
+          "duration_ms": 90.0,
+          "hand": [
+            -10.48,
+            -14.85
+          ],
+          "head": [
+            -4.78,
+            -31.81
+          ],
+          "name": "Stagger"
+        },
+        {
+          "chest": [
+            -1.93,
+            -13.0
+          ],
+          "duration_ms": 110.0,
+          "hand": [
+            -5.13,
+            -10.21
+          ],
+          "head": [
+            -0.74,
+            -29.96
+          ],
+          "name": "Buckle"
+        },
+        {
+          "chest": [
+            -3.63,
+            -13.93
+          ],
+          "duration_ms": 100.0,
+          "hand": [
+            -3.07,
+            -12.63
+          ],
+          "head": [
+            2.74,
+            -29.69
+          ],
+          "name": "Lose balance"
+        },
+        {
+          "chest": [
+            -5.59,
+            -17.41
+          ],
+          "duration_ms": 100.0,
+          "hand": [
+            -5.59,
+            -16.0
+          ],
+          "head": [
+            6.44,
+            -29.44
+          ],
+          "name": "Collapse"
+        },
+        {
+          "chest": [
+            -8.15,
+            -19.93
+          ],
+          "duration_ms": 90.0,
+          "hand": [
+            -11.31,
+            -19.95
+          ],
+          "head": [
+            8.02,
+            -25.18
+          ],
+          "name": "Meet ground"
+        },
+        {
+          "chest": [
+            -10.01,
+            -19.21
+          ],
+          "duration_ms": 120.0,
+          "hand": [
+            -13.07,
+            -20.0
+          ],
+          "head": [
+            6.95,
+            -20.4
+          ],
+          "name": "Settle"
+        },
+        {
+          "chest": [
+            -10.0,
+            -19.0
+          ],
+          "duration_ms": 160.0,
+          "hand": [
+            -13.0,
+            -20.0
+          ],
+          "head": [
+            7.0,
+            -19.0
+          ],
+          "name": "Rest"
+        },
+        {
+          "chest": [
+            -10.0,
+            -19.0
+          ],
+          "duration_ms": 430.0,
+          "hand": [
+            -13.0,
+            -20.0
+          ],
+          "head": [
+            7.0,
+            -19.0
+          ],
+          "name": "Still"
+        }
+      ],
+      "loop": false,
+      "loop_from": 0.0
+    },
+    "fall": {
+      "atlas": "spirit-fall.png",
+      "frames": [
+        {
+          "chest": [
+            -1.0,
+            -15.0
+          ],
+          "duration_ms": 100.0,
+          "hand": [
+            -9.0,
+            -20.0
+          ],
+          "head": [
+            -1.0,
+            -32.0
+          ],
+          "name": "Release"
+        },
+        {
+          "chest": [
+            -1.0,
+            -14.0
+          ],
+          "duration_ms": 110.0,
+          "hand": [
+            -10.0,
+            -19.0
+          ],
+          "head": [
+            -1.0,
+            -31.0
+          ],
+          "name": "Open"
+        },
+        {
+          "chest": [
+            -1.0,
+            -14.0
+          ],
+          "duration_ms": 110.0,
+          "hand": [
+            -10.0,
+            -19.0
+          ],
+          "head": [
+            -1.0,
+            -31.0
+          ],
+          "name": "Brace"
+        },
+        {
+          "chest": [
+            -1.0,
+            -14.0
+          ],
+          "duration_ms": 110.0,
+          "hand": [
+            -10.0,
+            -19.0
+          ],
+          "head": [
+            -1.0,
+            -31.0
+          ],
+          "name": "Settle"
+        }
+      ],
+      "loop": true,
+      "loop_from": 1.0
+    },
+    "hurt": {
+      "atlas": "spirit-hurt.png",
+      "frames": [
+        {
+          "chest": [
+            -2.52,
+            -14.95
+          ],
+          "duration_ms": 50.0,
+          "hand": [
+            -12.25,
+            -18.32
+          ],
+          "head": [
+            -5.47,
+            -31.7
+          ],
+          "name": "Impact"
+        },
+        {
+          "chest": [
+            -3.83,
+            -14.88
+          ],
+          "duration_ms": 80.0,
+          "hand": [
+            -13.86,
+            -17.21
+          ],
+          "head": [
+            -8.51,
+            -31.23
+          ],
+          "name": "Recoil"
+        },
+        {
+          "chest": [
+            -1.17,
+            -12.99
+          ],
+          "duration_ms": 80.0,
+          "hand": [
+            -8.06,
+            -11.39
+          ],
+          "head": [
+            -2.66,
+            -29.93
+          ],
+          "name": "Catch"
+        },
+        {
+          "chest": [
+            0.0,
+            -12.0
+          ],
+          "duration_ms": 90.0,
+          "hand": [
+            -1.0,
+            -11.0
+          ],
+          "head": [
+            1.0,
+            -29.0
+          ],
+          "name": "Regain balance"
+        }
+      ],
+      "loop": false,
+      "loop_from": 0.0
+    },
+    "idle": {
+      "atlas": "spirit-idle.png",
+      "frames": [
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Rest"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Inhale"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Rising"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Full breath"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Suspended"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Exhale"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Settling"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 250.0,
+          "hand": [
+            12,
+            -10
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Rest return"
+        }
+      ],
+      "loop": true,
+      "loop_from": 0
+    },
+    "jump": {
+      "atlas": "spirit-jump.png",
+      "frames": [
+        {
+          "chest": [
+            -1.0,
+            -13.0
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            -2.0,
+            -12.0
+          ],
+          "head": [
+            -1.0,
+            -30.0
+          ],
+          "name": "Gather"
+        },
+        {
+          "chest": [
+            -1.0,
+            -15.0
+          ],
+          "duration_ms": 60.0,
+          "hand": [
+            -3.0,
+            -15.0
+          ],
+          "head": [
+            -1.0,
+            -32.0
+          ],
+          "name": "Extend"
+        },
+        {
+          "chest": [
+            -1.0,
+            -16.0
+          ],
+          "duration_ms": 70.0,
+          "hand": [
+            -7.0,
+            -24.0
+          ],
+          "head": [
+            -1.0,
+            -33.0
+          ],
+          "name": "Lift"
+        },
+        {
+          "chest": [
+            -1.0,
+            -16.0
+          ],
+          "duration_ms": 80.0,
+          "hand": [
+            -7.0,
+            -25.0
+          ],
+          "head": [
+            -1.0,
+            -33.0
+          ],
+          "name": "Knee drive"
+        },
+        {
+          "chest": [
+            -1.0,
+            -15.0
+          ],
+          "duration_ms": 90.0,
+          "hand": [
+            -8.0,
+            -22.0
+          ],
+          "head": [
+            -1.0,
+            -32.0
+          ],
+          "name": "Float"
+        },
+        {
+          "chest": [
+            -1.0,
+            -15.0
+          ],
+          "duration_ms": 120.0,
+          "hand": [
+            -9.0,
+            -20.0
+          ],
+          "head": [
+            -1.0,
+            -32.0
+          ],
+          "name": "Apex"
+        }
+      ],
+      "loop": false,
+      "loop_from": 0.0
+    },
+    "run": {
+      "atlas": "spirit-run.png",
+      "frames": [
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            12,
+            -11
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Right contact"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            10,
+            -13
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Right recoil"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            12,
+            -11
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Right push-off"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            11,
+            -12
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Right flight"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            10,
+            -14
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Left contact"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            9,
+            -9
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Left recoil"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            12,
+            -11
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Left push-off"
+        },
+        {
+          "chest": [
+            0,
+            -13
+          ],
+          "duration_ms": 125.0,
+          "hand": [
+            10,
+            -13
+          ],
+          "head": [
+            0,
+            -31
+          ],
+          "name": "Left flight"
+        }
+      ],
+      "loop": true,
+      "loop_from": 0
+    },
+    "swipe": {
+      "atlas": "spirit-swipe.png",
+      "frames": [
+        {
+          "chest": [
+            -2.0,
+            -12.0
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            -11.0,
+            -13.0
+          ],
+          "head": [
+            -2.0,
+            -29.0
+          ],
+          "name": "Wind-up"
+        },
+        {
+          "chest": [
+            -1.0,
+            -13.0
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            0.0,
+            -14.0
+          ],
+          "head": [
+            0.0,
+            -30.0
+          ],
+          "name": "Uncoil"
+        },
+        {
+          "chest": [
+            0.0,
+            -13.0
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            3.0,
+            -17.0
+          ],
+          "head": [
+            1.0,
+            -30.0
+          ],
+          "name": "Strike"
+        },
+        {
+          "chest": [
+            0.0,
+            -12.0
+          ],
+          "duration_ms": 40.0,
+          "hand": [
+            2.0,
+            -11.0
+          ],
+          "head": [
+            1.0,
+            -29.0
+          ],
+          "name": "Follow-through"
+        },
+        {
+          "chest": [
+            0.0,
+            -12.0
+          ],
+          "duration_ms": 50.0,
+          "hand": [
+            0.0,
+            -10.0
+          ],
+          "head": [
+            1.0,
+            -29.0
+          ],
+          "name": "Recover"
+        },
+        {
+          "chest": [
+            0.0,
+            -12.0
+          ],
+          "duration_ms": 50.0,
+          "hand": [
+            -1.0,
+            -11.0
+          ],
+          "head": [
+            1.0,
+            -29.0
+          ],
+          "name": "Ready"
+        }
+      ],
+      "loop": false,
+      "loop_from": 0.0
+    }
+  },
+  "pivot": [
+    32,
+    60
+  ]
+}

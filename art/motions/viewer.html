@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Numen — all eight motions</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:24px auto;padding:0 20px;max-width:1192px;background:#18202c;color:#eef0dc;font:15px system-ui}h1{font-size:26px;margin:0 0 6px}p{color:#b9c9c9}button,select{padding:8px 12px;background:#263846;color:inherit;border:1px solid #53747b;border-radius:5px}label{display:inline-flex;gap:8px;align-items:center}nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0}canvas,img{image-rendering:pixelated}canvas{display:block;max-width:100%}.strip{overflow-x:auto}.strip canvas{max-width:none}#gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}article{border:1px solid #344c58;border-radius:8px;padding:12px}article a{color:#a2e8ef}article h3{margin:0 0 8px}article img{width:192px;height:192px;display:block;margin:auto}.muted{font-size:13px;color:#afc1c5}
+</style>
+<h1>Neutral spirit — animation review</h1>
+<p>Eight motions from the approved run character. Native size and 4× detail share the same foot pivot.</p>
+<nav>
+<label>Motion <select id="motion"></select></label>
+<button id="pause">Pause</button><button id="restart">Restart</button><button id="step">Next frame</button>
+<label>Speed <input id="speed" type="range" min="0.25" max="2" step="0.25" value="1"><span id="rate">1×</span></label>
+<label><input id="flip" type="checkbox">Face left</label>
+<label><input id="repeat" type="checkbox" checked>Repeat one-shots for review</label>
+</nav>
+<p id="status">Loading…</p><canvas id="preview" width="760" height="276"></canvas>
+<p id="description"></p>
+<div class="strip"><canvas id="sheet" width="1152" height="190"></canvas></div>
+<p class="muted">Green ticks mark the shared pivot. The final column shows the loop return or the held final pose. One-shot GIFs pause before restarting; they are not seamless cycles.</p>
+<h2>GIFs</h2><div id="gallery"></div>
+<p><a href="contact-sheet.png">Full contact sheet</a> · <a href="../../assets/spirit-motions.json">Timing and anchor metadata</a></p>
+<script>
+const order=['idle','run','jump','fall','swipe','dash','hurt','death'];
+const descriptions={idle:'Athletic ready stance, planted feet, two-second breath.',run:'Eight-frame run; alternating single support and flight.',jump:'Launch and knee drive, then hold at the apex until descent.',fall:'Release from the apex; three bracing poses loop during descent.',swipe:'Wind-up, strike and recovery in the existing 260 ms attack window.',dash:'Forward drive and trailing limbs in the existing 130 ms dash.',hurt:'Impact, recoil and recovery after a damage event.',death:'Collapse to a held final pose. In-game, a temporary visual remains at the death location while the player respawns immediately.'};
+const $=id=>document.getElementById(id);let library,images={},name='idle',frame=0,time=0,playing=true,last=0;
+function total(m){return m.frames.reduce((sum,f)=>sum+f.duration_ms,0)}
+function frameAt(m,t){const length=total(m);if(m.loop&&t>=length){const entry=m.frames.slice(0,m.loop_from).reduce((s,f)=>s+f.duration_ms,0);t=entry+(t-entry)%(length-entry)}for(let i=0;i<m.frames.length;i++){if(t<m.frames[i].duration_ms)return i;t-=m.frames[i].duration_ms}return m.frames.length-1}
+function sprite(ctx,i,x,y,scale){ctx.save();ctx.translate(x,y);ctx.scale($('flip').checked?-scale:scale,scale);ctx.drawImage(images[name],i*64,0,64,64,-32,-60,64,64);ctx.restore();ctx.strokeStyle='#70bf85';ctx.beginPath();ctx.moveTo(x-4,y);ctx.lineTo(x+4,y);ctx.moveTo(x,y-3);ctx.lineTo(x,y+3);ctx.stroke()}
+function draw(){if(!library)return;const m=library.motions[name],p=$('preview').getContext('2d');p.imageSmoothingEnabled=false;p.clearRect(0,0,760,276);sprite(p,frame,80,244,1);sprite(p,frame,330,244,4);p.fillStyle='#b9c9c9';p.fillText('Gameplay size',38,270);p.fillText('4× inspection',287,270);$('status').textContent=`${name.toUpperCase()} · ${frame+1}/${m.frames.length} · ${m.frames[frame].name} · ${m.frames[frame].duration_ms} ms`;$('description').textContent=descriptions[name];const s=$('sheet').getContext('2d');s.imageSmoothingEnabled=false;s.clearRect(0,0,1152,190);for(let i=0;i<=m.frames.length;i++){const f=i<m.frames.length?i:(m.loop?m.loop_from:m.frames.length-1);sprite(s,f,64+i*128,134,2);s.fillStyle='#eef0dc';s.fillText(i<m.frames.length?`${i+1} ${m.frames[i].name}`:(m.loop?'Return':'Hold'),4+i*128,160)}}
+function select(value){name=value;$('motion').value=name;time=0;frame=0;draw()}
+$('motion').onchange=()=>select($('motion').value);$('pause').onclick=()=>{playing=!playing;$('pause').textContent=playing?'Pause':'Play'};$('restart').onclick=()=>select(name);$('step').onclick=()=>{playing=false;$('pause').textContent='Play';frame=(frame+1)%library.motions[name].frames.length;time=library.motions[name].frames.slice(0,frame).reduce((s,f)=>s+f.duration_ms,0);draw()};$('flip').onchange=draw;$('speed').oninput=()=>{$('rate').textContent=$('speed').value+'×'};
+function tick(now){if(library&&playing){const m=library.motions[name];time+=Math.min(now-last,100)*Number($('speed').value);if(!m.loop&&$('repeat').checked&&time>=total(m)+500)time%=total(m)+500;frame=frameAt(m,time);draw()}last=now;requestAnimationFrame(tick)}
+(async()=>{library=await(await fetch('../../assets/spirit-motions.json')).json();for(const n of order){const option=document.createElement('option');option.value=n;option.textContent=n[0].toUpperCase()+n.slice(1);$('motion').append(option);images[n]=new Image();images[n].src='../../assets/'+library.motions[n].atlas;await images[n].decode();const card=document.createElement('article');card.innerHTML=`<h3>${option.textContent}</h3><img src="${n}-4x.gif" alt="${n} animation"><a href="${n}.gif">Gameplay-size GIF</a> · <a href="${n}-4x.gif">4× GIF</a>`;$('gallery').append(card)}select('idle');window.review={select,frameAt,get state(){return{name,frame,playing,time}},pause(){playing=false},play(){playing=true},seek(t){time=t;frame=frameAt(library.motions[name],t);draw()},get library(){return library}};requestAnimationFrame(tick)})().catch(e=>{$('status').textContent='Could not load the preview: '+e.message});
+</script>
+</html>
