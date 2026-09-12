@@ -1,0 +1,399 @@
+{
+  "cell": [
+    64,
+    64
+  ],
+  "pivot": [
+    32,
+    60
+  ],
+  "fps": 8,
+  "near_leg": "right",
+  "phases": [
+    {
+      "name": "contact",
+      "bob": 0,
+      "lead_leg": [
+        [
+          31,
+          49
+        ],
+        [
+          37,
+          52
+        ]
+      ],
+      "trail_leg": [
+        [
+          31,
+          49
+        ],
+        [
+          25,
+          53
+        ]
+      ],
+      "lead_foot": [
+        35,
+        59,
+        -15
+      ],
+      "trail_foot": [
+        24,
+        52,
+        -45
+      ],
+      "lead_arm": [
+        [
+          -5,
+          1
+        ],
+        [
+          -5,
+          5
+        ]
+      ],
+      "trail_arm": [
+        [
+          3,
+          4
+        ],
+        [
+          7,
+          2
+        ]
+      ],
+      "spike_angles": [
+        6,
+        8,
+        6
+      ]
+    },
+    {
+      "name": "down",
+      "bob": 2,
+      "lead_leg": [
+        [
+          31,
+          51
+        ],
+        [
+          36,
+          53
+        ]
+      ],
+      "trail_leg": [
+        [
+          31,
+          51
+        ],
+        [
+          27,
+          52
+        ]
+      ],
+      "lead_foot": [
+        32,
+        59,
+        0
+      ],
+      "trail_foot": [
+        24,
+        51,
+        -30
+      ],
+      "lead_arm": [
+        [
+          -4,
+          3
+        ],
+        [
+          -2,
+          5
+        ]
+      ],
+      "trail_arm": [
+        [
+          3,
+          4
+        ],
+        [
+          5,
+          1
+        ]
+      ],
+      "spike_angles": [
+        -6,
+        -5,
+        -4
+      ]
+    },
+    {
+      "name": "push-off",
+      "bob": -2,
+      "lead_leg": [
+        [
+          31,
+          47
+        ],
+        [
+          30,
+          52
+        ]
+      ],
+      "trail_leg": [
+        [
+          31,
+          47
+        ],
+        [
+          37,
+          46
+        ]
+      ],
+      "lead_foot": [
+        29,
+        57,
+        20
+      ],
+      "trail_foot": [
+        35,
+        53,
+        -25
+      ],
+      "lead_arm": [
+        [
+          1,
+          5
+        ],
+        [
+          5,
+          3
+        ]
+      ],
+      "trail_arm": [
+        [
+          -2,
+          5
+        ],
+        [
+          -4,
+          3
+        ]
+      ],
+      "spike_angles": [
+        -10,
+        -8,
+        -10
+      ]
+    },
+    {
+      "name": "airborne",
+      "bob": -3,
+      "lead_leg": [
+        [
+          31,
+          46
+        ],
+        [
+          26,
+          50
+        ]
+      ],
+      "trail_leg": [
+        [
+          31,
+          46
+        ],
+        [
+          38,
+          45
+        ]
+      ],
+      "lead_foot": [
+        24,
+        52,
+        -25
+      ],
+      "trail_foot": [
+        38,
+        53,
+        -15
+      ],
+      "lead_arm": [
+        [
+          3,
+          4
+        ],
+        [
+          7,
+          2
+        ]
+      ],
+      "trail_arm": [
+        [
+          -5,
+          1
+        ],
+        [
+          -5,
+          5
+        ]
+      ],
+      "spike_angles": [
+        4,
+        5,
+        5
+      ]
+    }
+  ],
+  "frames": [
+    {
+      "name": "Right contact",
+      "phase": 0,
+      "lead": "right"
+    },
+    {
+      "name": "Right recoil",
+      "phase": 1,
+      "lead": "right"
+    },
+    {
+      "name": "Right push-off",
+      "phase": 2,
+      "lead": "right"
+    },
+    {
+      "name": "Right flight",
+      "phase": 3,
+      "lead": "right"
+    },
+    {
+      "name": "Left contact",
+      "phase": 0,
+      "lead": "left"
+    },
+    {
+      "name": "Left recoil",
+      "phase": 1,
+      "lead": "left"
+    },
+    {
+      "name": "Left push-off",
+      "phase": 2,
+      "lead": "left"
+    },
+    {
+      "name": "Left flight",
+      "phase": 3,
+      "lead": "left"
+    }
+  ],
+  "segment_lengths": {
+    "leg": [
+      4.5,
+      4.5
+    ],
+    "arm": [
+      4,
+      4
+    ]
+  },
+  "spikes": [
+    {
+      "name": "upright",
+      "root": [
+        36,
+        19
+      ],
+      "polygon": [
+        [
+          32,
+          11
+        ],
+        [
+          34,
+          11
+        ],
+        [
+          40,
+          15
+        ],
+        [
+          40,
+          19
+        ],
+        [
+          34,
+          19
+        ],
+        [
+          34,
+          15
+        ],
+        [
+          32,
+          13
+        ]
+      ]
+    },
+    {
+      "name": "upper-left",
+      "root": [
+        33,
+        22
+      ],
+      "polygon": [
+        [
+          21,
+          16
+        ],
+        [
+          29,
+          16
+        ],
+        [
+          33,
+          19
+        ],
+        [
+          33,
+          22
+        ],
+        [
+          27,
+          22
+        ],
+        [
+          21,
+          20
+        ]
+      ]
+    },
+    {
+      "name": "lower-left",
+      "root": [
+        24,
+        28
+      ],
+      "polygon": [
+        [
+          15,
+          25
+        ],
+        [
+          24,
+          25
+        ],
+        [
+          24,
+          30
+        ],
+        [
+          15,
+          30
+        ]
+      ]
+    }
+  ]
+}

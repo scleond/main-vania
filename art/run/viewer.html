@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Numen — run review</title>
+<style>body{background:#18202c;color:#eef0dc;font:16px system-ui;margin:24px}canvas{image-rendering:pixelated;display:block;margin:16px 0}button,input{margin:8px}small{display:block}</style>
+<h1>Neutral spirit — run</h1>
+<button id="pause">Pause</button><button id="step">Step</button>
+<label>Frames/sec <input id="speed" type="range" min="1" max="20" value="8"></label>
+<label><input id="flip" type="checkbox">Face left</label>
+<p id="status"></p><canvas id="preview" width="640" height="280"></canvas>
+<p>Gameplay size (48 px body), 4× inspection; green ticks mark the common foot pivot.</p>
+<canvas id="sheet" width="1152" height="180"></canvas>
+<small>Chronological contact sheet; frame 1 repeated after frame 8 to inspect the seam.</small>
+<p>Opposite-limb pairs: contact, recoil, push-off, flight.</p>
+<canvas id="pairs" width="1024" height="180"></canvas>
+<script>
+const image=new Image();image.src='../../assets/spirit-run.png';
+let frame=0,playing=true,elapsed=0,last=0;
+const preview=document.querySelector('#preview'),sheet=document.querySelector('#sheet');
+const pause=document.querySelector('#pause'),step=document.querySelector('#step'),speed=document.querySelector('#speed'),flip=document.querySelector('#flip');
+const phases=['Right contact','Right recoil','Right push-off','Right flight','Left contact','Left recoil','Left push-off','Left flight'];
+function sprite(ctx,index,x,y,scale,flip=false){ctx.save();ctx.translate(x,y);ctx.scale(flip?-scale:scale,scale);ctx.drawImage(image,index*64,0,64,64,-32,-60,64,64);ctx.restore();ctx.strokeStyle='#70bf85';ctx.beginPath();ctx.moveTo(x-3,y);ctx.lineTo(x+3,y);ctx.moveTo(x,y-3);ctx.lineTo(x,y+3);ctx.stroke();}
+function draw(){const ctx=preview.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,640,280);sprite(ctx,frame,64,240,1,flip.checked);sprite(ctx,frame,320,240,4,flip.checked);document.querySelector('#status').textContent=`Frame ${frame+1}/8 · ${speed.value} fps · ${phases[frame]}`;const s=sheet.getContext('2d');s.imageSmoothingEnabled=false;s.clearRect(0,0,1152,180);for(let i=0;i<9;i++){sprite(s,i%8,64+i*128,140,2);s.fillStyle='#eef0dc';s.fillText(`${i%8+1} ${phases[i%8]}`,16+i*128,164);}const p=document.querySelector('#pairs').getContext('2d');p.imageSmoothingEnabled=false;p.clearRect(0,0,1024,180);[0,4,1,5,2,6,3,7].forEach((f,i)=>{sprite(p,f,64+i*128,140,2);p.fillStyle='#eef0dc';p.fillText(`${f+1} ${phases[f]}`,16+i*128,164);});}
+pause.onclick=()=>{playing=!playing;pause.textContent=playing?'Pause':'Play';};step.onclick=()=>{playing=false;pause.textContent='Play';frame=(frame+1)%8;draw();};
+function tick(time){if(playing){elapsed+=Math.min(time-last,100);const duration=1000/Number(speed.value);while(elapsed>=duration){frame=(frame+1)%8;elapsed-=duration;}}last=time;if(image.complete&&image.naturalWidth)draw();requestAnimationFrame(tick);}requestAnimationFrame(tick);
+</script>
