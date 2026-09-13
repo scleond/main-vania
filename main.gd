@@ -128,11 +128,12 @@ func _ready():
 	choice.position = Vector2(40, 88)
 	choice.size = Vector2(560, 172)
 	ui.add_child(choice)
-	choice_title = label_at('EVOLVE / Ember', Vector2(18, 12), 20, choice)
-	choice_detail = label_at('Choose one permanent upgrade. Play is paused.', Vector2(18, 40), 12, choice)
+	choice_title = label_at('EVOLVE / Ember family', Vector2(18, 12), 20, choice)
+	choice_detail = label_at('Choose one permanent Ember upgrade with Numen. Play is paused.', Vector2(18, 40), 12, choice)
 	slot_buttons.append(button_at('1 · Searing Claws', Vector2(18, 72), func(): choose_current_slot(0), choice))
 	slot_buttons.append(button_at('2 · Flame Arc', Vector2(285, 72), func(): choose_current_slot(1), choice))
-	label_at('Both add fiery claws and stay repeatable to rank 8. N starts a fresh run.', Vector2(18, 139), 11, choice)
+	label_at('Searing Claws adds fiery fingers; Flame Arc reveals a furnace core.', Vector2(18, 118), 11, choice)
+	label_at('Strongest affinity colors the head spikes. Both repeat to rank 8.', Vector2(18, 139), 11, choice)
 	choice.hide()
 	pause_label = label_at('PAUSED — Esc to resume', Vector2(195, 165), 19)
 	pause_label.hide()
@@ -144,7 +145,7 @@ func refresh_menu():
 	if session_only:
 		menu_detail.text = 'Persistent storage is unavailable. You can play, but this run lasts only for this browser session.'
 	elif not saved_run.is_empty():
-		menu_detail.text = 'Continue from the checkpoint with your typed numen window and upgrade ranks, or begin fresh.'
+		menu_detail.text = 'Continue from the checkpoint with your typed Numen window and upgrade ranks, or begin fresh.'
 	else:
 		menu_detail.text = 'Move, jump, dash and retry from the nearby checkpoint. Your progress saves automatically.'
 
@@ -217,7 +218,7 @@ func respawn(count = true):
 	enemies.clear()
 	wave = 0
 	wave_wait = Tuning.WAVE_WAIT_INITIAL
-	note('Checkpoint restored. Numen and upgrades retained.' if count else 'Defeat the Ember creatures. Earn numen toward evolution.')
+	note('Checkpoint restored. Numen and upgrades retained.' if count else 'Defeat the Ember creatures. Earn Numen toward evolution.')
 	if playing:
 		persist_run()
 
@@ -257,10 +258,6 @@ func _unhandled_key_input(event):
 		KEY_2:
 			if choosing:
 				choose_current_slot(1)
-		KEY_M:
-			if playing and not choosing:
-				mixed = not mixed
-				note('Preview: Stone protection + Wind air-jump / faster dash' if mixed else 'Mixed preview off. Earned Ember upgrades retained.')
 		KEY_P:
 			if playing:
 				player.visual.use_alternate_presentation(not player.visual.alternate_presentation)
@@ -346,6 +343,8 @@ func _physics_process(delta):
 	player.burn_rank = burn_rank()
 	player.mixed = mixed
 	if is_instance_valid(player.visual):
+		player.visual.path_ranks = {'searing_claws': burn_rank(), 'flame_arc': arc_rank()}
+		player.visual.fully_evolved = progression.is_fully_evolved()
 		player.visual.playback_paused = not player.active
 	if not player.active:
 		return
@@ -451,8 +450,8 @@ func refresh_choice_panel():
 		choice_mode = 'paths'
 		var element_name = String(current.get('element', 'ember')).capitalize()
 		var selected = progression.selections
-		choice_title.text = 'EVOLVE / %s  (%d/%d)' % [element_name, selected + 1, Progression.SELECTION_CAP]
-		choice_detail.text = 'Choose one permanent upgrade (repeatable to rank 8). Play is paused.'
+		choice_title.text = 'EVOLVE / %s family  (%d/%d)' % [element_name, selected + 1, Progression.SELECTION_CAP]
+		choice_detail.text = 'Choose one permanent %s upgrade with Numen (repeatable to rank 8). Play is paused.' % element_name.capitalize()
 		for i in range(slot_buttons.size()):
 			slot_buttons[i].text = path_label(PATH_IDS[i], i) if i < PATH_IDS.size() else '—'
 
@@ -461,16 +460,16 @@ func refresh():
 	var leaders = progression.dominant_elements()
 	var leader_text = 'none' if leaders.is_empty() else '/'.join(leaders)
 	if progression.is_fully_evolved():
-		hud.text = 'Health %.1f / %d   |   Fully evolved %d/%d   |   Claws r%d · Arc r%d' % [hp, int(Tuning.PLAYER_MAX_HP), progression.selections, Progression.SELECTION_CAP, burn_rank(), arc_rank()]
+		hud.text = 'Health %.1f / %d   |   Fully evolved / Ember aura %d/%d   |   Claws r%d · Arc r%d' % [hp, int(Tuning.PLAYER_MAX_HP), progression.selections, Progression.SELECTION_CAP, burn_rank(), arc_rank()]
 	elif requirement > 0:
-		hud.text = 'Health %.1f / %d   |   Ember numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
+		hud.text = 'Health %.1f / %d   |   Numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	else:
 		hud.text = 'Health %.1f / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	if session_only:
 		hud.text += '   |   Session-only (storage unavailable)'
 	if choosing:
 		refresh_choice_panel()
-		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — progression numen rest' % wave)
+		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d Numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — Ember aura active; Numen no longer accumulates' % wave)
 	if mixed:
 		status.text += '  |  Mixed preview ON'
 

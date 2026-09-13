@@ -67,7 +67,7 @@ func _physics_process(delta):
  position.x=clampf(position.x,Tuning.ROOM_LEFT_BOUND,Tuning.ROOM_RIGHT_BOUND)
  visual.scale.x=facing
  visual.present(velocity,is_on_floor(),attack_left,dash_left,attack_id)
- visual.elements=[upgrade!='',false,false,mixed,mixed]
+ visual.path_ranks={'searing_claws':burn_rank,'flame_arc':arc_rank}
  visual.modulate.a=0.45 if invulnerable>0 and int(clock*15)%2==0 else 1.0
  visual.queue_redraw()
  queue_redraw()

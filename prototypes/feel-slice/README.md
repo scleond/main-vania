@@ -8,7 +8,7 @@ Open the locally served export in Chrome. Run `python3 -m http.server 8774 --dir
 
 - Enter starts. A/D or arrows move, Space jumps, J/X swipes, Shift dashes.
 - Fight small groups: three groups of two easy enemies, then one medium. Easy enemies grant one numen; medium two. The room repeats so retries and post-upgrade comparisons remain possible.
-- Earn eight Ember numen to pause and choose Searing Claws (1) or Flame Arc (2). Burn damages enemies over time; Arc extends the swipe. Both show the shared Ember attachments. This experiment implements only the first selection; subsequent numen are retained against the next threshold but no second level-up is offered.
+- Earn eight Numen from Ember creatures to pause and choose an Ember-family upgrade: Searing Claws (1) or Flame Arc (2). Burn damages enemies over time; Arc extends the swipe. Both show the shared Ember attachments. This experiment implements only the first selection; subsequent Numen are retained against the next threshold but no second level-up is offered.
 - M toggles a clearly labeled Stone/Wind preview: reduced damage, one air jump and shorter dash cooldown, with layered parts. This does not spend numen or stand in for the final progression rules.
 - E rests near the glowing checkpoint. K triggers a nearby respawn for comparison. Death/rest repopulate the room and retain earned numen/upgrade. N starts fresh to try the other choice. Escape pauses; losing focus pauses.
 - Session state only: refreshing or closing resets the experiment. Browser-save feasibility was tested separately; this is not a new production save system.

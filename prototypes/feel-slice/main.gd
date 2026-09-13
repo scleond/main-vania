@@ -78,7 +78,7 @@ func _ready():
  menu.position=Vector2(110,90)
  menu.size=Vector2(420,165)
  ui.add_child(menu)
- label_at('Earn 8 Ember souls to evolve',Vector2(24,15),20,menu)
+ label_at('Earn 8 Numen to evolve',Vector2(24,15),20,menu)
  label_at('Fight small groups. Orange warning → lunge → recovery.\nEasy: 1 soul. Medium: 2 souls. Jump or dash past attacks.\nDeath keeps souls and your chosen upgrade.\nTemporary art; no audio. Refresh starts a new session.',Vector2(24,49),12,menu)
  button_at('Start [Enter]',Vector2(24,120),start_run,menu)
  choice=Panel.new()
@@ -120,7 +120,7 @@ func respawn(count=true):
  enemies.clear()
  wave=0
  wave_wait=0.6
- note('Checkpoint restored. Souls and upgrade retained.' if count else 'Defeat the Ember creatures. Earn 8 souls.')
+ note('Checkpoint restored. Numen and upgrade retained.' if count else 'Defeat the Ember creatures. Earn 8 Numen.')
 func note(value):
  message=value
  message_left=4.0
@@ -233,7 +233,7 @@ func _physics_process(delta):
  for particle in particles:particle.time+=delta
  particles=particles.filter(func(p):return p.time<0.65)
 func refresh():
- hud.text='Health %.1f / 6   |   Ember souls %s   |   %s' % [hp,(str(souls)+' / 8') if upgrade=='' else str(souls),'Neutral' if upgrade=='' else ('Searing Claws' if upgrade=='burn' else 'Flame Arc')]
+ hud.text='Health %.1f / 6   |   Numen %s   |   %s' % [hp,(str(souls)+' / 8') if upgrade=='' else str(souls),'Neutral' if upgrade=='' else ('Searing Claws' if upgrade=='burn' else 'Flame Arc')]
  status.text=message if message_left>0 else ('Mixed preview ON: Stone + Wind  |  Wave %d' % wave if mixed else 'Wave %d  |  One earned upgrade in this experiment' % wave)
 func _process(_delta):
  refresh()

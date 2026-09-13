@@ -16,14 +16,14 @@ power in the game was once someone else's nature.
 - **Gather numen.** Fallen spirits release sparks; collect enough to grow.
 - **Attune.** Spend numen to take on an elemental essence and change how your
   attacks behave.
-- **Mix.** Combine essences into hybrid builds (a preview of Stone + Wind
-  exists in the current slice).
+- **Mix.** Preview cumulative elemental forms in the standalone
+  [composition workshop](art/elements/viewer.html). Only Ember mechanics are playable.
 
 ## What's playable now
 
 A single Ember combat-room slice: the Neutral Spirit, easy lunge and medium
-charge enemies with warnings/recovery, auto-collected graphical numen, paused
-Ember choices (Searing Claws burn / Flame Arc reach, repeatable to rank 8),
+charge enemies with warnings/recovery, auto-collected graphical Numen, paused
+Ember-family choices (Searing Claws burn / Flame Arc reach, repeatable to rank 8),
 the shared earning-window ladder (thresholds 8–42, eight-selection cap with a
 Fully evolved state), checkpoint retry, and automatic versioned browser saves.
 The opening menu offers **Continue** for a saved run or **New Game**. Continue
@@ -55,6 +55,15 @@ Godot web templates as documented in [`docs/EXPORT.md`](docs/EXPORT.md).
 dash, Esc to pause, E/K to retry near the checkpoint, Enter to Continue, and N
 for a New Game.
 
+## Elemental artwork
+
+Serve the repository root and open `art/elements/viewer.html` for all ten
+paths, ranks, mixed forms, both facings, guardian copies, eight motions and
+attachment/sequence replacement controls. See [authoring notes](art/elements/README.md).
+Earned Claws and Arc ranks now drive separate reusable parts in Godot, including
+the death remnant. The old M-key Stone/Wind gameplay cheat has been removed.
+The checked-in browser export has not been rebuilt for this source change.
+
 ## For contributors
 
 - `main.gd` — room, session state, enemies, HUD.
@@ -63,7 +72,7 @@ for a New Game.
 - `tuning.gd` — central gameplay numbers (swipe windows, reach, burn,
   enemy warn/recovery); edit feel here, never in `visual.gd`.
 - `progression.gd` — earning-window rules (thresholds, ties, overflow,
-  ranks, cap); later elements live in its catalog but only Ember is offered.
+  ranks, cap); later elemental families live in its catalog but only Ember is offered.
 - `run_save.gd` — versioned production run-save envelope and browser/file
   storage boundary; it reserves stable world objective and modifier IDs.
 - `tests/test_progression.gd`, `tests/test_session.gd` — focused rule and

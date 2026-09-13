@@ -1,0 +1,1825 @@
+{
+  "version": 2,
+  "mounts": {
+    "searing_claws": {
+      "instances": [
+        {
+          "anchor": "far_hand",
+          "offset": [
+            -4,
+            -6
+          ],
+          "layer": "rear",
+          "phase": 1
+        },
+        {
+          "anchor": "hand",
+          "offset": [
+            -4,
+            -6
+          ],
+          "layer": "front",
+          "phase": 0
+        }
+      ]
+    },
+    "flame_arc": {
+      "anchor": "chest",
+      "offset": [
+        0,
+        -4
+      ],
+      "layer": "body_front",
+      "occluder": "near_hand"
+    },
+    "chain_spark": {
+      "anchor": "head",
+      "offset": [
+        -8,
+        -22
+      ],
+      "layer": "rear"
+    },
+    "thunderbeat": {
+      "anchor": "chest",
+      "offset": [
+        -1,
+        -1
+      ],
+      "layer": "body_effect"
+    },
+    "barb_shot": {
+      "anchor": "hand",
+      "offset": [
+        -7,
+        -8
+      ],
+      "layer": "front"
+    },
+    "bramble_trail": {
+      "anchor": "chest",
+      "offset": [
+        -15,
+        -5
+      ],
+      "layer": "rear"
+    },
+    "stonehide": {
+      "anchor": "chest",
+      "offset": [
+        -5,
+        1
+      ],
+      "layer": "body_under"
+    },
+    "reprisal": {
+      "anchor": "chest",
+      "offset": [
+        -12,
+        -10
+      ],
+      "layer": "rear"
+    },
+    "slipstream": {
+      "anchor": "chest",
+      "offset": [
+        -10,
+        5
+      ],
+      "layer": "rear"
+    },
+    "airborne": {
+      "instances": [
+        {
+          "anchor": "chest",
+          "offset": [
+            -13,
+            15
+          ],
+          "layer": "rear"
+        },
+        {
+          "anchor": "chest",
+          "offset": [
+            4,
+            15
+          ],
+          "layer": "rear",
+          "phase": 1
+        }
+      ]
+    }
+  },
+  "motions": {
+    "dash": [
+      {
+        "head": [
+          2.47,
+          -30.7
+        ],
+        "chest": [
+          -0.48,
+          -13.95
+        ],
+        "hand": [
+          -9.52,
+          -14.53
+        ],
+        "angle": 10,
+        "far_hand": [
+          8.21,
+          -11.41
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              47
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          6.49,
+          -29.54
+        ],
+        "chest": [
+          0.12,
+          -13.78
+        ],
+        "hand": [
+          -8.77,
+          -18.45
+        ],
+        "angle": 22,
+        "far_hand": [
+          -1.55,
+          -12.3
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              21,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          6.49,
+          -29.54
+        ],
+        "chest": [
+          0.12,
+          -13.78
+        ],
+        "hand": [
+          -8.77,
+          -18.45
+        ],
+        "angle": 22,
+        "far_hand": [
+          -1.55,
+          -12.3
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              21,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          2.47,
+          -30.7
+        ],
+        "chest": [
+          -0.48,
+          -13.95
+        ],
+        "hand": [
+          -8.53,
+          -14.36
+        ],
+        "angle": 10,
+        "far_hand": [
+          7.05,
+          -10.6
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              23,
+              47
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "death": [
+      {
+        "head": [
+          -4.78,
+          -31.81
+        ],
+        "chest": [
+          -2.42,
+          -14.97
+        ],
+        "hand": [
+          -10.48,
+          -14.85
+        ],
+        "angle": -8,
+        "far_hand": [
+          6.49,
+          -16.22
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              23,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              30,
+              48
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -0.74,
+          -29.96
+        ],
+        "chest": [
+          -1.93,
+          -13.0
+        ],
+        "hand": [
+          -5.13,
+          -10.21
+        ],
+        "angle": 4,
+        "far_hand": [
+          4.77,
+          -8.52
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              28,
+              51
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              30,
+              48
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          2.74,
+          -29.69
+        ],
+        "chest": [
+          -3.63,
+          -13.93
+        ],
+        "hand": [
+          -3.07,
+          -12.63
+        ],
+        "angle": 22,
+        "far_hand": [
+          4.34,
+          -9.63
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              28,
+              47
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          6.44,
+          -29.44
+        ],
+        "chest": [
+          -5.59,
+          -17.41
+        ],
+        "hand": [
+          -5.59,
+          -16.0
+        ],
+        "angle": 45,
+        "far_hand": [
+          -2.05,
+          -9.64
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              25,
+              44
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          8.02,
+          -25.18
+        ],
+        "chest": [
+          -8.15,
+          -19.93
+        ],
+        "hand": [
+          -11.31,
+          -19.95
+        ],
+        "angle": 72,
+        "far_hand": [
+          -9.79,
+          -12.03
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              30,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              21,
+              41
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          6.95,
+          -20.4
+        ],
+        "chest": [
+          -10.01,
+          -19.21
+        ],
+        "hand": [
+          -13.07,
+          -20.0
+        ],
+        "angle": 86,
+        "far_hand": [
+          -13.51,
+          -11.95
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              30,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              19,
+              41
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          7.0,
+          -19.0
+        ],
+        "chest": [
+          -10.0,
+          -19.0
+        ],
+        "hand": [
+          -13.0,
+          -20.0
+        ],
+        "angle": 90,
+        "far_hand": [
+          -14.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              30,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              19,
+              41
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          7.0,
+          -19.0
+        ],
+        "chest": [
+          -10.0,
+          -19.0
+        ],
+        "hand": [
+          -13.0,
+          -20.0
+        ],
+        "angle": 90,
+        "far_hand": [
+          -14.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              30,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              19,
+              41
+            ]
+          }
+        }
+      }
+    ],
+    "fall": [
+      {
+        "head": [
+          -1.0,
+          -32.0
+        ],
+        "chest": [
+          -1.0,
+          -15.0
+        ],
+        "hand": [
+          -9.0,
+          -20.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -17.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              23,
+              40
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -31.0
+        ],
+        "chest": [
+          -1.0,
+          -14.0
+        ],
+        "hand": [
+          -10.0,
+          -19.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -16.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              41
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -31.0
+        ],
+        "chest": [
+          -1.0,
+          -14.0
+        ],
+        "hand": [
+          -10.0,
+          -19.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -16.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              41
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -31.0
+        ],
+        "chest": [
+          -1.0,
+          -14.0
+        ],
+        "hand": [
+          -10.0,
+          -19.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -16.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              41
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "hurt": [
+      {
+        "head": [
+          -5.47,
+          -31.7
+        ],
+        "chest": [
+          -2.52,
+          -14.95
+        ],
+        "hand": [
+          -12.25,
+          -18.32
+        ],
+        "angle": -10,
+        "far_hand": [
+          6.34,
+          -16.52
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              41
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              30,
+              48
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -8.51,
+          -31.23
+        ],
+        "chest": [
+          -3.83,
+          -14.88
+        ],
+        "hand": [
+          -13.86,
+          -17.21
+        ],
+        "angle": -16,
+        "far_hand": [
+          4.55,
+          -18.33
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              41
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              29,
+              48
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -2.66,
+          -29.93
+        ],
+        "chest": [
+          -1.17,
+          -12.99
+        ],
+        "hand": [
+          -8.06,
+          -11.39
+        ],
+        "angle": -5,
+        "far_hand": [
+          6.97,
+          -11.7
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              24,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1.0,
+          -29.0
+        ],
+        "chest": [
+          0.0,
+          -12.0
+        ],
+        "hand": [
+          -1.0,
+          -11.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "idle": [
+      {
+        "head": [
+          1,
+          -29
+        ],
+        "chest": [
+          0,
+          -12
+        ],
+        "hand": [
+          -1,
+          -11
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -29
+        ],
+        "chest": [
+          0,
+          -12
+        ],
+        "hand": [
+          -1,
+          -11
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -30
+        ],
+        "chest": [
+          0,
+          -13
+        ],
+        "hand": [
+          -1,
+          -12
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -30
+        ],
+        "chest": [
+          0,
+          -13
+        ],
+        "hand": [
+          -1,
+          -12
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -30
+        ],
+        "chest": [
+          0,
+          -13
+        ],
+        "hand": [
+          -1,
+          -12
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -30
+        ],
+        "chest": [
+          0,
+          -13
+        ],
+        "hand": [
+          -1,
+          -12
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -29
+        ],
+        "chest": [
+          0,
+          -12
+        ],
+        "hand": [
+          -1,
+          -11
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1,
+          -29
+        ],
+        "chest": [
+          0,
+          -12
+        ],
+        "hand": [
+          -1,
+          -11
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "jump": [
+      {
+        "head": [
+          -1.0,
+          -30.0
+        ],
+        "chest": [
+          -1.0,
+          -13.0
+        ],
+        "hand": [
+          -2.0,
+          -12.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          8.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              30,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -32.0
+        ],
+        "chest": [
+          -1.0,
+          -15.0
+        ],
+        "hand": [
+          -3.0,
+          -15.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          8.0,
+          -20.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              29,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -33.0
+        ],
+        "chest": [
+          -1.0,
+          -16.0
+        ],
+        "hand": [
+          -7.0,
+          -24.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          7.0,
+          -23.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              25,
+              36
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -33.0
+        ],
+        "chest": [
+          -1.0,
+          -16.0
+        ],
+        "hand": [
+          -7.0,
+          -25.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          8.0,
+          -22.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              25,
+              35
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -32.0
+        ],
+        "chest": [
+          -1.0,
+          -15.0
+        ],
+        "hand": [
+          -8.0,
+          -22.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -19.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              24,
+              38
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1.0,
+          -32.0
+        ],
+        "chest": [
+          -1.0,
+          -15.0
+        ],
+        "hand": [
+          -9.0,
+          -20.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -17.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              23,
+              40
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "run": [
+      {
+        "head": [
+          -1,
+          -31
+        ],
+        "chest": [
+          -1,
+          -14
+        ],
+        "hand": [
+          -10,
+          -12
+        ],
+        "angle": 0,
+        "far_hand": [
+          10.0,
+          -14.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              48
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -29
+        ],
+        "chest": [
+          -1,
+          -12
+        ],
+        "hand": [
+          -7,
+          -10
+        ],
+        "angle": 0,
+        "far_hand": [
+          8.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              25,
+              50
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -33
+        ],
+        "chest": [
+          -1,
+          -16
+        ],
+        "hand": [
+          0,
+          -16
+        ],
+        "angle": 0,
+        "far_hand": [
+          -1.0,
+          -15.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              44
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -34
+        ],
+        "chest": [
+          -1,
+          -17
+        ],
+        "hand": [
+          2,
+          -18
+        ],
+        "angle": 0,
+        "far_hand": [
+          -2.0,
+          -14.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              34,
+              42
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -31
+        ],
+        "chest": [
+          -1,
+          -14
+        ],
+        "hand": [
+          2,
+          -15
+        ],
+        "angle": 0,
+        "far_hand": [
+          -2.0,
+          -11.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              34,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -29
+        ],
+        "chest": [
+          -1,
+          -12
+        ],
+        "hand": [
+          0,
+          -14
+        ],
+        "angle": 0,
+        "far_hand": [
+          1.0,
+          -9.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              46
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -33
+        ],
+        "chest": [
+          -1,
+          -16
+        ],
+        "hand": [
+          -9,
+          -16
+        ],
+        "angle": 0,
+        "far_hand": [
+          8.0,
+          -15.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              23,
+              44
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          -1,
+          -34
+        ],
+        "chest": [
+          -1,
+          -17
+        ],
+        "hand": [
+          -10,
+          -15
+        ],
+        "angle": 0,
+        "far_hand": [
+          10.0,
+          -17.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              22,
+              45
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ],
+    "swipe": [
+      {
+        "head": [
+          -2.0,
+          -29.0
+        ],
+        "chest": [
+          -2.0,
+          -12.0
+        ],
+        "hand": [
+          -11.0,
+          -13.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          4.0,
+          -10.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              21,
+              47
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          0.0,
+          -30.0
+        ],
+        "chest": [
+          -1.0,
+          -13.0
+        ],
+        "hand": [
+          0.0,
+          -14.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          5.0,
+          -11.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              46
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1.0,
+          -30.0
+        ],
+        "chest": [
+          0.0,
+          -13.0
+        ],
+        "hand": [
+          3.0,
+          -17.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          11.0,
+          -16.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              35,
+              43
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1.0,
+          -29.0
+        ],
+        "chest": [
+          0.0,
+          -12.0
+        ],
+        "hand": [
+          2.0,
+          -11.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          10.0,
+          -13.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              34,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1.0,
+          -29.0
+        ],
+        "chest": [
+          0.0,
+          -12.0
+        ],
+        "hand": [
+          0.0,
+          -10.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              32,
+              50
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      },
+      {
+        "head": [
+          1.0,
+          -29.0
+        ],
+        "chest": [
+          0.0,
+          -12.0
+        ],
+        "hand": [
+          -1.0,
+          -11.0
+        ],
+        "angle": 0,
+        "far_hand": [
+          9.0,
+          -12.0
+        ],
+        "occluders": {
+          "near_hand": {
+            "wrist": [
+              31,
+              49
+            ],
+            "transform_origin": [
+              31,
+              49
+            ],
+            "transform_at": [
+              31,
+              49
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "occlusion_masks": {
+    "near_hand": {
+      "pivot": [
+        2,
+        2
+      ],
+      "rows": [
+        "xxxxxxx",
+        "xxxxxxx",
+        "xxxxxxx",
+        "xxxxxx."
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "part_overrides": {
+    "searing_claws": "searing_claws_fork"
+  },
+  "offset_overrides": {
+    "searing_claws": [
+      -1,
+      -4
+    ]
+  },
+  "sequences": {
+    "swipe": [
+      0,
+      0,
+      2,
+      2,
+      5,
+      5
+    ]
+  }
+}
