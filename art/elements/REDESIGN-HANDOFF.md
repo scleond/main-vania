@@ -1,6 +1,41 @@
 # Issue #23 — elemental presentation handoff, 2026-09-13
 
-## Bounded presentation follow-up
+## Correction pass on accepted baseline `12dd3f06bc226ff0609b63f049b6403793143991`
+
+Airborne now wraps faint Wind mist behind and across both ankles. Two static,
+sparse masks use 4–23% alpha instead of opaque cloud lobes. Per-pose ankle
+positions and foot angles come from the original approved authoring poses,
+including run depth swaps and the whole-pose death transform. Rank highlights
+stay inside the mask; expanding cloud growth has been removed. Slipstream
+retains its short geometry and cadence with matching faint ink.
+
+The maxed aura now uses the current body silhouette's alpha, softened with
+two separable radius-four blur passes and tinted at at most 22% opacity in
+the dominant family's main spike color. Canvas and Godot use the same shared
+settings and cache each pose/family texture. The former aura arcs are removed;
+no circle, ring, outline, badge or mechanic is introduced. The pre-existing
+violet guardian ownership marker remains separate.
+
+The viewer exposes both ankle anchors and calls the maxed treatment a family
+glow. Reprisal's existing texture now respects its preview toggle (the baseline
+read rank even when disabled). Thunderbeat/Stonehide layering, Reprisal facets,
+spike palettes, Ember and Chain Spark are retained from the accepted commit.
+No progression, save, combat or preview-release gating edits were made.
+
+Read issue #23 and its empty comments through the GitHub connector after
+`gh issue view 23 --comments` failed to connect. Inspected the original B
+concept, accessory atlas and existing neutral contact sheet; authored source
+only. No tests, builds, syntax checks, browser checks, new screenshots/renders,
+exports or validation commands were run. Parent owns all validation, including
+mist overlap at ranks 1/8, both facings, lifted feet, run swaps, death poses,
+diffuse aura contrast and cache cost/parity. Existing validation notes below
+predate this correction and do not validate it.
+
+Changed files: `assets/element-parts.json`, `assets/element-attachments.json`,
+`elemental_parts.gd`, `visual.gd`, `art/elements/viewer.js`,
+`art/elements/viewer.html`, `art/elements/README.md`, and this handoff.
+
+## Baseline bounded presentation follow-up (superseded mist/aura treatment)
 
 The shared source recipes now refine the non-Ember preview families without
 opening them in released gameplay. Thunderbeat is a small blue belly swirl in

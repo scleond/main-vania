@@ -166,12 +166,8 @@ func _draw():
  var name = MOTION_NAMES[motion]
  var family = parts.dominant_family(path_ranks)
  if fully_evolved and family != '':
-  var aura = Color(parts.artwork.spike_palettes[family][2])
-  aura.a = 0.9
-  draw_arc(Vector2(0,-24),29,0,TAU,24,aura,1.0)
-  var aura_light = Color(parts.artwork.spike_palettes[family][3])
-  aura_light.a = 0.75
-  draw_arc(Vector2(0,-24),31,-2.5,-0.7,8,aura_light,1.0)
+  var pad = int(parts.artwork.aura.blur_radius)*int(parts.artwork.aura.blur_passes)
+  draw_texture(parts.aura_texture(name,frame,motion_atlases[name],family),Vector2(-32-pad,-60-pad))
  parts.draw_layer(self,name,frame,path_ranks,'rear',alternate_presentation,element_clock)
  var body = parts.body_texture(name,motion_atlases[name],family,path_ranks)
  draw_texture_rect_region(body,Rect2(-32,-60,64,64),Rect2(frame*64,0,64,64))

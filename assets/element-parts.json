@@ -53,6 +53,11 @@
     "stone": ["#30394a", "#77879a", "#c5c9c4", "#f7e8c3"],
     "wind": ["#194c61", "#27b9c9", "#82f3ed", "#effff8"]
   },
+  "aura": {
+    "blur_radius": 4,
+    "blur_passes": 2,
+    "opacity": 0.22
+  },
   "motifs": {
     "fire": {
       "frames": [
@@ -454,19 +459,53 @@
           "......o."
         ]
       ],
-      "frame_ms": 150
+      "frame_ms": 150,
+      "ink_alpha": [
+        0.04,
+        0.1,
+        0.18,
+        0.23
+      ]
     },
-    "cloud": {
+    "ankle_mist_back": {
       "frames": [
         [
-          "..+..+...",
-          ".+*+.+*+.",
-          "o***oo**o",
-          ".ooooooo.",
-          "..oooo..."
+          "...oo......",
+          "..oxxo..oo.",
+          ".ox+xxooxo.",
+          "oxx..oxxxo.",
+          ".o....oxo..",
+          ".......o...",
+          "..........."
         ]
       ],
-      "frame_ms": 1000
+      "frame_ms": 1000,
+      "ink_alpha": [
+        0.04,
+        0.1,
+        0.18,
+        0.23
+      ]
+    },
+    "ankle_mist_front": {
+      "frames": [
+        [
+          "...........",
+          "...........",
+          "...........",
+          "oo.....oo..",
+          ".oxoooxxxo.",
+          "..oxx+xxo..",
+          "....ooo...."
+        ]
+      ],
+      "frame_ms": 1000,
+      "ink_alpha": [
+        0.04,
+        0.1,
+        0.18,
+        0.23
+      ]
     },
     "cinder": {
       "frames": [
@@ -943,63 +982,38 @@
     "airborne": {
       "family": "wind",
       "name": "Airborne",
-      "motif": "cloud",
+      "motif": "ankle_mist_back",
       "rank_marks": [
         [
-          10,
-          5
+          3,
+          2
         ],
         [
-          9,
-          4
-        ],
-        [
-          8,
-          4
+          3,
+          1
         ],
         [
           7,
           3
         ],
         [
-          6,
-          3
-        ],
-        [
-          5,
+          2,
           2
         ],
         [
-          4,
-          1
+          8,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          7,
+          4
         ]
       ],
-      "growth": [
-        {
-          "min_rank": 3,
-          "motif": "cloud",
-          "offset": [
-            8,
-            0
-          ]
-        },
-        {
-          "min_rank": 5,
-          "motif": "cloud",
-          "offset": [
-            -8,
-            0
-          ]
-        },
-        {
-          "min_rank": 8,
-          "motif": "cloud",
-          "offset": [
-            0,
-            -3
-          ]
-        }
-      ]
+      "growth": []
     },
     "searing_claws_fork": {
       "family": "ember",

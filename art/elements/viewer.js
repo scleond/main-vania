@@ -4,6 +4,7 @@ const order = ['idle', 'run', 'jump', 'fall', 'swipe', 'dash', 'hurt', 'death'];
 let art, attachments, alternate, motions, paths, images = {};
 let name = 'idle', frame = 0, time = 0, elementTime = 0, playing = true, last;
 const bodyCache = new Map();
+const auraCache = new Map();
 const enabled = {}, ranks = {};
 const buffer = document.createElement('canvas');
 buffer.width = buffer.height = 128;
@@ -62,6 +63,33 @@ function bodyImage(family, reprisal) {
   ctx.putImageData(image, 0, 0); bodyCache.set(key, body); return body;
 }
 function nativeRound(value) { return Math.sign(value) * Math.floor(Math.abs(value) + .5); }
+function auraImage(f, family) {
+  const key = name + ':' + f + ':' + family;
+  if (auraCache.has(key)) return auraCache.get(key);
+  // Same padded pose-alpha diffusion as Godot; cached once per pose/family.
+  const {blur_radius: radius, blur_passes: passes, opacity} = art.aura;
+  const pad = radius * passes, size = 64 + pad * 2;
+  const glow = document.createElement('canvas'); glow.width = glow.height = size;
+  const ctx = glow.getContext('2d');
+  ctx.drawImage(images[name], f * 64, 0, 64, 64, pad, pad, 64, 64);
+  const pixels = ctx.getImageData(0, 0, size, size);
+  let alpha = Float32Array.from({length: size * size}, (_, i) => pixels.data[i * 4 + 3] / 255);
+  for (let step = 0; step < passes * 2; step++) {
+    const softened = new Float32Array(size * size);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      let total = 0;
+      for (let offset = -radius; offset <= radius; offset++) {
+        const sx = step % 2 === 0 ? x + offset : x, sy = step % 2 === 0 ? y : y + offset;
+        if (sx >= 0 && sx < size && sy >= 0 && sy < size) total += alpha[sy * size + sx];
+      }
+      softened[y * size + x] = total / (radius * 2 + 1);
+    }
+    alpha = softened;
+  }
+  const tint = [1, 3, 5].map(i => parseInt(art.spike_palettes[family][2].slice(i, i + 2), 16));
+  for (let i = 0; i < alpha.length; i++) pixels.data.set([...tint, Math.round(alpha[i] * opacity * 255)], i * 4);
+  ctx.putImageData(pixels, 0, 0); auraCache.set(key, glow); return glow;
+}
 function occluded(x, y, pose, maskId) {
   if (!maskId) return false;
   const mask = attachments.occlusion_masks[maskId], placement = pose.occluders[maskId];
@@ -90,8 +118,11 @@ function motif(ctx, id, ox, oy, angle, palette, phase, marks = [], rank = 1, pos
     if (color < 0) continue;
     if (occluded(x, y, pose, maskId)) continue;
     if (marks.slice(0, rank - 1).some(([mx, my]) => mx === px && my === py)) color = 3;
-    ctx.fillStyle = palette[color]; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = palette[color];
+    ctx.globalAlpha = spec.ink_alpha?.[color] ?? 1;
+    ctx.fillRect(x, y, 1, 1);
   }
+  ctx.globalAlpha = 1;
 }
 function layer(ctx, pose, side, replacement) {
   for (const path of paths) {
@@ -104,7 +135,7 @@ function layer(ctx, pose, side, replacement) {
     for (const mount of recipe.instances ?? [recipe]) {
       if (mount.layer !== side) continue;
       const offset = replacement ? (alternate.offset_overrides[path] ?? mount.offset) : mount.offset;
-      const anchor = pose[mount.anchor], angle = pose.angle * Math.PI / 180;
+      const anchor = pose[mount.anchor], angle = pose[mount.angle_anchor ?? 'angle'] * Math.PI / 180;
       const ox = Math.round(anchor[0] + offset[0] * Math.cos(angle) - offset[1] * Math.sin(angle));
       const oy = Math.round(anchor[1] + offset[0] * Math.sin(angle) + offset[1] * Math.cos(angle));
       const maskId = mount.occluder ?? '', phase = mount.phase ?? 0;
@@ -113,7 +144,7 @@ function layer(ctx, pose, side, replacement) {
         const [x, y] = growth.offset;
         motif(ctx, growth.motif, Math.round(ox + x * Math.cos(angle) - y * Math.sin(angle)), Math.round(oy + x * Math.sin(angle) + y * Math.cos(angle)), angle, palette, i + 1 + phase, [], 1, pose, maskId);
       });
-      motif(ctx, part.motif, ox, oy, angle, palette, phase, part.rank_marks, rank, pose, maskId);
+      motif(ctx, mount.motif ?? part.motif, ox, oy, angle, palette, phase, part.rank_marks, rank, pose, maskId);
     }
   }
 }
@@ -123,13 +154,11 @@ function sprite(ctx, i, x, y, scale, left, copy, replacement) {
   ink.imageSmoothingEnabled = false;
   const family = dominantFamily(), maxed = paths.reduce((sum, p) => sum + (enabled[p] ? ranks[p] : 0), 0) >= 8;
   if (maxed && family) {
-    ink.strokeStyle = art.spike_palettes[family][2]; ink.lineWidth = 1;
-    ink.beginPath(); ink.arc(0, -24, 29, 0, Math.PI * 2); ink.stroke();
-    ink.strokeStyle = art.spike_palettes[family][3];
-    ink.beginPath(); ink.arc(0, -24, 31, -2.5, -0.7); ink.stroke();
+    const pad = art.aura.blur_radius * art.aura.blur_passes;
+    ink.drawImage(auraImage(f, family), -32 - pad, -60 - pad);
   }
   layer(ink, pose, 'rear', replacement);
-  ink.drawImage(bodyImage(family, ranks.reprisal > 0), f * 64, 0, 64, 64, -32, -60, 64, 64);
+  ink.drawImage(bodyImage(family, enabled.reprisal && ranks.reprisal > 0), f * 64, 0, 64, 64, -32, -60, 64, 64);
   layer(ink, pose, 'body_under', replacement);
   layer(ink, pose, 'body_effect', replacement);
   layer(ink, pose, 'body_front', replacement);
@@ -152,7 +181,7 @@ function sprite(ctx, i, x, y, scale, left, copy, replacement) {
     ctx.beginPath(); ctx.moveTo(-19, 3); ctx.lineTo(22, 3); ctx.stroke();
   }
   if ($('anchors').checked) {
-    for (const [anchor, color] of [['hand', '#77ff77'], ['far_hand', '#ff88bb'], ['head', '#ffda77'], ['chest', '#77ddff']]) {
+    for (const [anchor, color] of [['hand', '#77ff77'], ['far_hand', '#ff88bb'], ['head', '#ffda77'], ['chest', '#77ddff'], ['foot', '#ffffff'], ['far_foot', '#b7b7ff']]) {
       const [ax, ay] = pose[anchor];
       ctx.fillStyle = color; ctx.fillRect(ax - 2, ay, 5, 1); ctx.fillRect(ax, ay - 2, 1, 5);
     }
@@ -179,7 +208,7 @@ function draw() {
   const shown = displayFrame(frame, replacement);
   $('status').textContent = `${name} · slot ${frame + 1}/${m.frames.length} · displayed pose ${shown + 1}: ${m.frames[shown].name} · ${m.frames[frame].duration_ms} ms · element clock ${Math.floor(elementTime)} ms`;
   const count = paths.reduce((sum, p) => sum + (enabled[p] ? ranks[p] : 0), 0);
-  $('identity').textContent = dominantFamily() ? `${dominantFamily()} spike tips · strongest family by total ranks${count >= 8 ? ' · maxed Numen aura' : ''}` : 'Neutral cyan spike tips';
+  $('identity').textContent = dominantFamily() ? `${dominantFamily()} spike tips · strongest family by total ranks${count >= 8 ? ' · fully evolved family glow' : ''}` : 'Neutral cyan spike tips';
   $('effect-time').value = Math.floor(elementTime % 2400);
   $('budget').textContent = `${count}/8 selections${count > 8 ? ' — impossible stress preview' : ''}`;
   $('sockets').textContent = $('anchors').checked ? JSON.stringify({

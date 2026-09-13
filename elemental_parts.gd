@@ -4,6 +4,45 @@ var artwork = JSON.parse_string(FileAccess.get_file_as_string('res://assets/elem
 var attachments = JSON.parse_string(FileAccess.get_file_as_string('res://assets/element-attachments.json'))
 var replacement = JSON.parse_string(FileAccess.get_file_as_string('res://assets/element-presentation-alternate.json'))
 var body_cache: Dictionary = {}
+var aura_cache: Dictionary = {}
+
+func aura_texture(name: String, frame: int, atlas: Texture2D, family: String) -> Texture2D:
+ var key = name+':'+str(frame)+':'+family
+ if aura_cache.has(key): return aura_cache[key]
+ # Diffuse the actual pose alpha, with transparent padding. No contour geometry.
+ var spec = artwork.aura
+ var radius = int(spec.blur_radius)
+ var passes = int(spec.blur_passes)
+ var pad = radius*passes
+ var size = 64+pad*2
+ var source = atlas.get_image()
+ var alpha = PackedFloat32Array()
+ alpha.resize(size*size)
+ for y in 64:
+  for x in 64:
+   alpha[(y+pad)*size+x+pad] = source.get_pixel(frame*64+x,y).a
+ for step in passes*2:
+  var softened = PackedFloat32Array()
+  softened.resize(size*size)
+  for y in size:
+   for x in size:
+    var total = 0.0
+    for offset in range(-radius,radius+1):
+     var sx = x+offset if step%2 == 0 else x
+     var sy = y if step%2 == 0 else y+offset
+     if sx >= 0 and sx < size and sy >= 0 and sy < size:
+      total += alpha[sy*size+sx]
+    softened[y*size+x] = total/float(radius*2+1)
+  alpha = softened
+ var glow = Image.create(size,size,false,Image.FORMAT_RGBA8)
+ var tint = Color(artwork.spike_palettes[family][2])
+ for y in size:
+  for x in size:
+   tint.a = alpha[y*size+x]*float(spec.opacity)
+   glow.set_pixel(x,y,tint)
+ var texture = ImageTexture.create_from_image(glow)
+ aura_cache[key] = texture
+ return texture
 
 func pose(name: String, frame: int) -> Dictionary:
  return attachments.motions[name][frame]
@@ -101,7 +140,9 @@ func draw_motif(canvas: Node2D, motif_id: String, origin: Vector2, angle: float,
    # Veins/inclusions live inside the motif, never as floating rank tally bars.
    for i in mini(rank-1,marks.size()):
     if px == int(marks[i][0]) and py == int(marks[i][1]): ink = 3
-   canvas.draw_rect(Rect2(x,y,1,1),Color(palette[ink]))
+   var color = Color(palette[ink])
+   if motif.has('ink_alpha'): color.a *= float(motif.ink_alpha[ink])
+   canvas.draw_rect(Rect2(x,y,1,1),color)
 
 func draw_layer(canvas: Node2D, name: String, frame: int, ranks: Dictionary, layer: String, alternate: bool, seconds: float = 0.0):
  var sockets = pose(name,frame)
@@ -118,7 +159,7 @@ func draw_layer(canvas: Node2D, name: String, frame: int, ranks: Dictionary, lay
    if mount.layer != layer: continue
    var anchor = sockets[mount.anchor]
    var offset = replacement.offset_overrides.get(path,mount.offset) if alternate else mount.offset
-   var angle = deg_to_rad(sockets.angle)
+   var angle = deg_to_rad(sockets.get(mount.get('angle_anchor','angle'),sockets.angle))
    var origin = (Vector2(anchor[0],anchor[1])+Vector2(offset[0],offset[1]).rotated(angle)).round()
    var mask_id = mount.get('occluder','')
    var phase = int(mount.get('phase',0))
@@ -127,4 +168,4 @@ func draw_layer(canvas: Node2D, name: String, frame: int, ranks: Dictionary, lay
     if rank < int(growth.min_rank): continue
     var at = origin+Vector2(growth.offset[0],growth.offset[1]).rotated(angle)
     draw_motif(canvas,growth.motif,at.round(),angle,palette,seconds,i+1+phase,[],1,sockets,mask_id)
-   draw_motif(canvas,part.motif,origin,angle,palette,seconds,phase,part.rank_marks,rank,sockets,mask_id)
+   draw_motif(canvas,mount.get('motif',part.motif),origin,angle,palette,seconds,phase,part.rank_marks,rank,sockets,mask_id)

@@ -28,11 +28,11 @@ Stone uses dark, broad, overlapping facets with no autonomous movement.
 | Storm | Chain Spark branches above the hood; Thunderbeat is a small blue-ish belly swirl below Flame Arc. | Chain Spark keeps its five branch states; Thunderbeat stays a small pulse-like sparkle. | Additional forks and secondary discharge nodes. |
 | Thorn | Barb Shot curls up from the wrist; Bramble Trail winds behind the waist. | Slow terminal leaf changes at 420/500 ms; rooted stems stay coherent. | Pale veins, leaves and a second shoot. |
 | Stone | Stonehide is rocky belly skin; Reprisal textures the existing head spikes. | Stonehide is static; Reprisal is texture-only and has no effect animation. | Mineral inclusions, chips and overlapping rock layers. |
-| Wind | Slipstream is a short, close waist wisp; Airborne forms small clouds beneath the feet. | Slipstream keeps a compact 150 ms wisp; Airborne clouds stay still. | Forked currents and additional cloud forms. |
+| Wind | Slipstream is a short, faint waist wisp; Airborne wraps both ankles in translucent mist. | Slipstream keeps its compact 150 ms wisp; Airborne mist stays still. | Compact Slipstream offshoots; Airborne gains internal mist density without expanding. |
 
 Rank zero draws nothing. Rank one is the complete first-acquisition motif.
 For Storm, Thorn, Stone and Wind, ranks 2–8 each reveal one internal highlight **only where the current animated
-mask has a pixel**; no floating row of rank bars is drawn. Those four families also add authored offshoots at ranks 3, 5 and 8.
+mask has a pixel**; no floating row of rank bars is drawn. Those four families also add authored offshoots at ranks 3, 5 and 8, except Airborne: its mist stays within the same ankle footprint.
 Ember has no rank marks, cinders, secondary tongues or growth stamps. These growth stages give silhouette changes while
 keeping the footprint bounded. Exact rank remains visible in the controls;
 internal highlights are a secondary density cue at gameplay scale, not a
@@ -81,6 +81,32 @@ not swap when facing left: mirror the entire composition, including its mask.
 Replacement swipe slots select all sockets and occlusion metadata from the
 actual displayed pose, not the original timeline slot.
 
+### Foot mist and fully evolved glow
+
+Airborne uses two sparse translucent pixel masks at each ankle: a rear veil
+and a front strand wrapping across the foot. Pale Wind ink has per-role alpha
+of 4–23%, with no dark outline. Rank highlights add a little density inside
+that footprint; no cloud growth stamps extend along the floor. Slipstream
+uses the same faint ink treatment on its existing short waist wisp.
+
+`foot` and `far_foot` sockets are the approved near/far ankles, calculated from
+`lead_foot`/`trail_foot` placements plus the rotated (0, -2) ankle offset.
+Run swaps depth roles with its lead selection. The six other motions apply
+the source whole-pose transform around (31, 49), then subtract (32, 60).
+Each socket also records its foot angle plus the whole-pose angle. Mount
+`angle_anchor` selects that angle and `motif` selects the rear/front mask.
+The metadata follows lifted feet and death poses rather than the torso bob.
+
+The fully evolved aura diffuses the original body pose's alpha behind the
+spirit, tinted with the dominant family's main spike color. Two separable
+box-blur passes of radius four soften the silhouette through eight pixels of
+transparent padding; opacity is capped at 22%. These shared settings live in
+`artwork.aura`. Both consumers cache the resulting texture per motion, pose
+and family. It has no circular geometry, contour stroke, autonomous animation
+or gameplay effect. The existing violet guardian ownership marker is separate.
+Family selection and the eight-selection trigger retain their baseline rules;
+Numen is the earned resource, not another elemental family.
+
 ### Head-spike identity
 
 The family with the highest sum of equipped path ranks colors the existing
@@ -106,6 +132,9 @@ motion/family; there is no separately authored sprite set per build.
 | `elemental_parts.gd`, `visual.gd` | Runtime composition, cached spike recoloring, independent cosmetic clock. |
 | `art/elements/viewer.js` | Browser consumer of the same artwork, growth, palette and pose data. |
 | `progression.gd`, `tuning.gd`, `player.gd` | Earned ranks and mechanical behavior. Unchanged by this redesign. |
+
+Optional motif `ink_alpha` values multiply palette alpha per ink role; opaque
+Ember and Chain Spark recipes are unchanged.
 
 Pixel strings use `.` for transparency and `o`, `x`, `+`, `*` for outline,
 shadow/body color, light and hottest highlight. A motif supplies `frames` and
@@ -142,7 +171,7 @@ A parent still needs to compare Canvas and Godot rasterization visually.
 - **Step elements +65 ms** and the element-phase scrubber pause both clocks
   and change only the elemental time. Body stepping preserves elemental time.
 - Dark ruins, midtone moss and light mist backgrounds expose contrast issues.
-- Head, body, near-wrist (green) and far-wrist (pink) crosshairs, plus numeric
+- Head, body, near-wrist (green), far-wrist (pink), near-ankle (white) and far-ankle (lavender) crosshairs, plus numeric
   pose, occluder and effective Ember mount/offset data.
 - Simultaneous baseline/replacement samples use the same elemental time.
 
@@ -161,7 +190,7 @@ Body sampling, duration, state selection and gameplay timers are unchanged.
 
 The released player continues to pass only earned `searing_claws` and
 `flame_arc` ranks. At eight selections, the dominant Ember family receives a
-presentation-only aura; Numen remains the collected resource and Ember remains
+faint diffuse presentation-only glow; Numen remains the collected resource and Ember remains
 the elemental family. Existing paused upgrade synchronization and death snapshots
 remain in place. Other families, custom builds and guardian forms are confined
 to the standalone art workshop. There is no new gameplay input, progression
