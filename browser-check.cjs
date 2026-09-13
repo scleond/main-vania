@@ -44,7 +44,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
       movement: moved.x - starting.x,
       actions: acted.attack - starting.attack,
       attackStarted: active.attack_active,
-      attackDurationMs,
+      attackDurationMs: actionDurationMs,
     };
   };
   const defaultOutcome = await exercisePresentation('default');
@@ -64,6 +64,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   await page.keyboard.press('Escape'); await page.waitForTimeout(100); state = await read();
   check('pause boundary', state.paused, state);
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  await page.keyboard.down('a'); await page.waitForTimeout(350); await page.keyboard.up('a');
   await page.keyboard.press('k'); await page.waitForTimeout(150); state = await read();
   check('nearby retry boundary', state.retries >= 1 && Math.abs(state.x - 70) < 8, state);
   // Earn a numen choice through real combat (no debug grant): steer to the
