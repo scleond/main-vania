@@ -24,6 +24,7 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
     typeof state.has_saved_run === 'boolean' && typeof state.session_only === 'boolean' &&
     typeof state.checkpoint_id === 'string', state);
   const exercisePresentation = async presentation => {
+    await page.keyboard.press('n'); await page.waitForTimeout(150);
     state = await read();
     if (state.presentation !== presentation) {
       await page.keyboard.press('p'); await page.waitForTimeout(100); state = await read();
@@ -92,6 +93,14 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   check('session offers two Ember paths', state.offer_kind === 'paths', state);
   await page.keyboard.press('1'); await page.waitForTimeout(200); state = await read();
   check('Searing Claws applies burn rank', !state.choosing && state.burn_rank === 1 && state.burn_duration > 0 && state.upgrade === 'burn', state);
+  const durableBrowserSave = await page.evaluate(() => {
+    const encoded = window.localStorage.getItem('numen-run-v1');
+    return encoded === null ? null : JSON.parse(encoded);
+  });
+  check('upgrade reaches durable browser storage before reload',
+    durableBrowserSave?.progression?.total_selections === 1 &&
+    durableBrowserSave?.progression?.path_ranks?.searing_claws === 1,
+    durableBrowserSave);
   // A checkpoint retry is a save boundary. Verify reload and a new browser
   // process observe the persisted run, then verify New Game replaces it.
   await page.keyboard.press('k'); await page.waitForTimeout(150);

@@ -7,22 +7,69 @@ extends RefCounted
 ## this save with a second format.
 const VERSION := 1
 const SAVE_PATH := 'user://numen-run-v1.json'
+const WEB_STORAGE_KEY := 'numen-run-v1'
 const EMPTY_WORLD := {'objectives': {}, 'modifier_assignments': {}}
 
 
 class FileStorage:
 	extends RefCounted
 	var force_unavailable := false
+	var browser_storage := false
 
 	func _init() -> void:
 		# A narrow browser-smoke seam: it exercises the same failure path as a
 		# blocked store without claiming to emulate every privacy policy.
 		if OS.has_feature('web'):
-			force_unavailable = JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('numen_storage') === 'unavailable'")
+			force_unavailable = JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('numen_storage') === 'unavailable'", true)
+			browser_storage = true
 
 	func read_text(path: String) -> Dictionary:
 		if force_unavailable:
 			return {'found': false, 'unavailable': true}
+		if browser_storage:
+			var result = _read_browser()
+			if result is Dictionary and (result.get('found', false) or result.get('unavailable', false)):
+				return result
+			# Migrate the original user:// save once when localStorage is empty.
+			var legacy := _read_file(path)
+			if legacy.get('found', false) and _write_browser(legacy.get('text', '')):
+				return legacy
+			if legacy.get('unavailable', false):
+				return legacy
+			return result if result is Dictionary else {'found': false, 'unavailable': true}
+		return _read_file(path)
+
+	func _read_browser() -> Dictionary:
+		var key := JSON.stringify(WEB_STORAGE_KEY)
+		var encoded = JavaScriptBridge.eval("""(function() {
+			try {
+				const value = window.localStorage.getItem(%s);
+				return JSON.stringify(value === null ? {found: false} : {found: true, text: value});
+			} catch (_) { return JSON.stringify({found: false, unavailable: true}); }
+		})()""" % key, true)
+		var result = JSON.parse_string(String(encoded))
+		return result if result is Dictionary else {'found': false, 'unavailable': true}
+
+	func _write_browser(text: String) -> bool:
+		var key := JSON.stringify(WEB_STORAGE_KEY)
+		var value := JSON.stringify(text)
+		return JavaScriptBridge.eval("""(function() {
+			try {
+				window.localStorage.setItem(%s, %s);
+				return window.localStorage.getItem(%s) === %s;
+			} catch (_) { return false; }
+		})()""" % [key, value, key, value], true)
+
+	func _erase_browser() -> bool:
+		var key := JSON.stringify(WEB_STORAGE_KEY)
+		return JavaScriptBridge.eval("""(function() {
+			try {
+				window.localStorage.removeItem(%s);
+				return window.localStorage.getItem(%s) === null;
+			} catch (_) { return false; }
+		})()""" % [key, key], true)
+
+	func _read_file(path: String) -> Dictionary:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
 			return {'found': false, 'unavailable': FileAccess.get_open_error() != ERR_FILE_NOT_FOUND}
@@ -31,6 +78,8 @@ class FileStorage:
 	func write_text(path: String, text: String) -> bool:
 		if force_unavailable:
 			return false
+		if browser_storage:
+			return _write_browser(text)
 		var file := FileAccess.open(path, FileAccess.WRITE)
 		if file == null:
 			return false
@@ -40,7 +89,10 @@ class FileStorage:
 	func erase(path: String) -> bool:
 		if force_unavailable:
 			return false
-		return not FileAccess.file_exists(path) or DirAccess.remove_absolute(path) == OK
+		var erased_file := not FileAccess.file_exists(path) or DirAccess.remove_absolute(path) == OK
+		if browser_storage:
+			return _erase_browser() and erased_file
+		return erased_file
 
 
 var storage
