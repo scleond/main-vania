@@ -1,5 +1,43 @@
 # Issue #23 — elemental presentation handoff, 2026-09-13
 
+## Bramble/Stonehide correction on accepted baseline `6beed54`
+
+Bramble Trail now uses compact winding vine masks over both lower legs.
+Mounts reuse the accepted near/far ankle positions, with new calf angles
+calculated from the original approved hip/knee-hint/ankle hinge (4.5-pixel
+segments). This follows the actual bent lower leg rather than the foot angle
+or torso bob, including run depth swaps and transformed death poses. The
+five-by-six masks cross the calves and end at their ankles. The original
+500 ms cosmetic cadence remains; only a leaf highlight changes between frames.
+
+Stonehide now uses a static fifteen-by-nine torso shell based on the original
+rig torso crop and the B concept/accessory atlas's overlapping stone facets.
+Shoulder straps, plate seams and a tapered hem follow the body silhouette;
+chest offset (-6, -3) maps to the approved torso crop origin. It stays in
+`body_under`, below Thunderbeat and Flame Arc. Both corrected paths use the
+existing near-hand occlusion mask to preserve the foreground hand.
+
+Both paths keep rank highlights inside their masks; external vine/stone growth
+stamps have been removed. Neither path changes mechanics, timing, collision,
+attack IDs, reach, damage/burn, progression, saves or preview-only gating.
+Accepted Ember layers, Chain Spark, Thunderbeat, Reprisal/spike colors,
+Slipstream, ankle mist, family glow and Numen terminology are retained.
+The compositor code and original body art/pose sources are unchanged.
+
+Inspected issue #23 and its empty comments through the GitHub connector after
+CLI network access failed, CONTEXT.md, both element docs, original B concept,
+accessory atlas, approved neutral contact sheet/rig and pose authoring sources,
+and current Canvas/Godot compositors. No tests, builds, syntax checks, browser
+checks, screenshots/renders, exports or other validation commands were run.
+Parent owns all validation. Review ranks 1/8 in both facings across all eight
+motions, especially bent/lifted calves, crossing legs, death transforms,
+torso edges, near-hand masking and mixed Thorn/Stone/Ember/Wind overlap.
+Visual correctness and Canvas/Godot parity are unverified for this correction.
+
+Changed files: `assets/element-parts.json`, `assets/element-attachments.json`,
+`art/elements/viewer.html`, `art/elements/README.md`, and this handoff.
+Earlier validation records below do not validate this correction.
+
 ## Correction pass on accepted baseline `12dd3f06bc226ff0609b63f049b6403793143991`
 
 Airborne now wraps faint Wind mist behind and across both ankles. Two static,

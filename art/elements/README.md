@@ -2,8 +2,9 @@
 
 The broader redesign replaced static badges with living native pixel parts.
 The latest pass preserves the verified Ember treatment and refines the
-remaining preview families: a small Storm belly swirl, layered Stone belly
-skin, textured family-colored spikes for Reprisal, and compact Wind forms.
+remaining preview families: leg-wrapped Bramble vines, fitted Stone torso
+armor, a small Storm belly swirl, textured family-colored spikes for Reprisal,
+and compact Wind forms.
 The visual source is the **selected B detailed-pixel concept**, the
 animation-workflow accessory atlas, and the approved idle/run/eight-motion
 spirit. Preserve the cream hood, dark face, tiny body and asymmetrical spikes.
@@ -26,13 +27,13 @@ Stone uses dark, broad, overlapping facets with no autonomous movement.
 | --- | --- | --- | --- |
 | Ember | Searing Claws wraps both wrists in fire; Flame Arc reveals a furnace core. | Original four flame contours at 90 ms; original three core frames at 140 ms. | Eight heat palettes, red/orange through blue/white-hot; no additional geometry. |
 | Storm | Chain Spark branches above the hood; Thunderbeat is a small blue-ish belly swirl below Flame Arc. | Chain Spark keeps its five branch states; Thunderbeat stays a small pulse-like sparkle. | Additional forks and secondary discharge nodes. |
-| Thorn | Barb Shot curls up from the wrist; Bramble Trail winds behind the waist. | Slow terminal leaf changes at 420/500 ms; rooted stems stay coherent. | Pale veins, leaves and a second shoot. |
-| Stone | Stonehide is rocky belly skin; Reprisal textures the existing head spikes. | Stonehide is static; Reprisal is texture-only and has no effect animation. | Mineral inclusions, chips and overlapping rock layers. |
+| Thorn | Barb Shot curls up from the wrist; Bramble Trail wraps both lower legs. | Slow terminal leaf changes at 420/500 ms; rooted stems stay coherent. | Barb Shot adds leaves/shoots; Bramble adds veins within its leg wraps. |
+| Stone | Stonehide is fitted, overlapping torso armor; Reprisal textures the existing head spikes. | Stonehide is static; Reprisal is texture-only and has no effect animation. | Stonehide gains inset mineral highlights; armor stays within the torso footprint. |
 | Wind | Slipstream is a short, faint waist wisp; Airborne wraps both ankles in translucent mist. | Slipstream keeps its compact 150 ms wisp; Airborne mist stays still. | Compact Slipstream offshoots; Airborne gains internal mist density without expanding. |
 
 Rank zero draws nothing. Rank one is the complete first-acquisition motif.
 For Storm, Thorn, Stone and Wind, ranks 2–8 each reveal one internal highlight **only where the current animated
-mask has a pixel**; no floating row of rank bars is drawn. Those four families also add authored offshoots at ranks 3, 5 and 8, except Airborne: its mist stays within the same ankle footprint.
+mask has a pixel**; no floating row of rank bars is drawn. Those four families also add authored offshoots at ranks 3, 5 and 8, except Bramble Trail, Stonehide and Airborne: their wraps, armor and mist keep the same body-attached footprints.
 Ember has no rank marks, cinders, secondary tongues or growth stamps. These growth stages give silhouette changes while
 keeping the footprint bounded. Exact rank remains visible in the controls;
 internal highlights are a secondary density cue at gameplay scale, not a
@@ -80,6 +81,33 @@ The existing `hand` socket remains the near wrist. These camera-depth roles do
 not swap when facing left: mirror the entire composition, including its mask.
 Replacement swipe slots select all sockets and occlusion metadata from the
 actual displayed pose, not the original timeline slot.
+
+### Leg wraps and torso armor
+
+Bramble Trail uses two five-by-six-pixel vine wraps over the lower legs,
+mounted at the existing near/far ankle positions in `body_under`. Each winding
+stem crosses the calf with pale veins and dark edge pixels; the two frames
+keep the stem attached and change only a leaf highlight at the original
+500 ms cosmetic cadence. No waist vine or ground trail is drawn.
+
+`lower_leg_angle` and `far_lower_leg_angle` follow the knee-to-ankle segment,
+not the foot rotation. They are derived from the approved pose's hip, knee
+hint and ankle using the original 4.5-pixel limb hinge, then include the
+whole-pose angle. Run retains its near/far lead selection. The existing ankle
+positions and foot angles used by Airborne are unchanged. A local offset of
+(-2, -5) lays each wrap along that calf, ending at its ankle.
+
+Stonehide's static shell follows the original torso crop's stepped silhouette:
+shoulder straps, overlapping breast/rib plates, dark seams and a tapered hem.
+The chest offset (-6, -3) maps its origin to the source torso's (25, 43),
+including the existing torso shift, bob and whole-pose transform. It occupies
+`body_under`, below Thunderbeat and Flame Arc. The approved near-hand mask
+keeps the foreground hand visible over both armor and vines.
+
+Ranks 2–8 add seven internal vein/mineral highlights to these two paths.
+Neither adds external growth stamps, so higher ranks cannot produce detached
+vines or stones. These are cosmetic preview recipes only; the named paths'
+mechanical definitions, strength, timing and release gating are unchanged.
 
 ### Foot mist and fully evolved glow
 
@@ -145,8 +173,8 @@ motif and use staggered frame phases to avoid synchronized flame/wind copies.
 
 An attachment recipe either supplies a single mount or an `instances` array;
 each instance supplies its own `anchor`, `offset`, `layer` and optional `phase`.
-A path-wide replacement offset applies to both claw instances. Only Flame Arc
-uses `occluder: near_hand`. Its mask is the alpha of the approved hand crop
+A path-wide replacement offset applies to both claw instances. Flame Arc, Stonehide and Bramble Trail
+use `occluder: near_hand`. Its mask is the alpha of the approved hand crop
 (`rig-look.png`, rectangle 39,46,7,4; pivot 2,2), encoded as rows in metadata.
 Each pose records the local wrist and whole-pose origin/placement. Both
 consumers undo the body transform and round to a source pixel, then sample the
@@ -205,6 +233,10 @@ cosmetic clock does not alter that demonstration or attack outcomes by design;
 executed outcome comparison remains parent work.
 
 ## Review status
+
+**Latest Bramble/Stonehide correction: unvalidated implementation.** Parent owns
+all validation and visual acceptance; no checks or exports were run for it.
+Earlier verification below applies to the preceding passes only.
 
 **Latest Ember pass: parent-verified (2026-09-13).** The parent ran progression
 (52 checks), session (27), run save (12), animation (24), JSON, JavaScript and

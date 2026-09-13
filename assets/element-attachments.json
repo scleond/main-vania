@@ -57,20 +57,39 @@
       "layer": "front"
     },
     "bramble_trail": {
-      "anchor": "chest",
-      "offset": [
-        -15,
-        -5
-      ],
-      "layer": "rear"
+      "instances": [
+        {
+          "anchor": "far_foot",
+          "angle_anchor": "far_lower_leg_angle",
+          "offset": [
+            -2,
+            -5
+          ],
+          "layer": "body_under",
+          "phase": 1,
+          "occluder": "near_hand"
+        },
+        {
+          "anchor": "foot",
+          "angle_anchor": "lower_leg_angle",
+          "offset": [
+            -2,
+            -5
+          ],
+          "layer": "body_under",
+          "phase": 0,
+          "occluder": "near_hand"
+        }
+      ]
     },
     "stonehide": {
       "anchor": "chest",
       "offset": [
-        -5,
-        1
+        -6,
+        -3
       ],
-      "layer": "body_under"
+      "layer": "body_under",
+      "occluder": "near_hand"
     },
     "reprisal": {
       "anchor": "chest",
@@ -178,7 +197,9 @@
           1.72,
           -6.39
         ],
-        "far_foot_angle": -5
+        "far_foot_angle": -5,
+        "lower_leg_angle": 115.25,
+        "far_lower_leg_angle": 70.88
       },
       {
         "head": [
@@ -223,7 +244,9 @@
           -2.43,
           -7.06
         ],
-        "far_foot_angle": -3
+        "far_foot_angle": -3,
+        "lower_leg_angle": 143.03,
+        "far_lower_leg_angle": 125.41
       },
       {
         "head": [
@@ -268,7 +291,9 @@
           -2.43,
           -7.06
         ],
-        "far_foot_angle": -3
+        "far_foot_angle": -3,
+        "lower_leg_angle": 143.03,
+        "far_lower_leg_angle": 125.41
       },
       {
         "head": [
@@ -313,7 +338,9 @@
           1.9,
           -6.4
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 116.54,
+        "far_lower_leg_angle": 67.7
       }
     ],
     "death": [
@@ -360,7 +387,9 @@
           2.46,
           -6.54
         ],
-        "far_foot_angle": -18
+        "far_foot_angle": -18,
+        "lower_leg_angle": 73.49,
+        "far_lower_leg_angle": 40.3
       },
       {
         "head": [
@@ -405,7 +434,9 @@
           2.5,
           -4.67
         ],
-        "far_foot_angle": 4
+        "far_foot_angle": 4,
+        "lower_leg_angle": 99.97,
+        "far_lower_leg_angle": 37.64
       },
       {
         "head": [
@@ -450,7 +481,9 @@
           -1.2,
           -7.52
         ],
-        "far_foot_angle": 12
+        "far_foot_angle": 12,
+        "lower_leg_angle": 157.65,
+        "far_lower_leg_angle": -113.56
       },
       {
         "head": [
@@ -495,7 +528,9 @@
           -6.71,
           -11.37
         ],
-        "far_foot_angle": 30
+        "far_foot_angle": 30,
+        "lower_leg_angle": 196.88,
+        "far_lower_leg_angle": 103.21
       },
       {
         "head": [
@@ -540,7 +575,9 @@
           -11.99,
           -15.19
         ],
-        "far_foot_angle": 52
+        "far_foot_angle": 52,
+        "lower_leg_angle": 221.72,
+        "far_lower_leg_angle": 138.82
       },
       {
         "head": [
@@ -585,7 +622,9 @@
           -14.88,
           -15.54
         ],
-        "far_foot_angle": 66
+        "far_foot_angle": 66,
+        "lower_leg_angle": 235.72,
+        "far_lower_leg_angle": 152.82
       },
       {
         "head": [
@@ -630,7 +669,9 @@
           -15.12,
           -15.68
         ],
-        "far_foot_angle": 70
+        "far_foot_angle": 70,
+        "lower_leg_angle": 239.72,
+        "far_lower_leg_angle": 156.82
       },
       {
         "head": [
@@ -675,7 +716,9 @@
           -15.12,
           -15.68
         ],
-        "far_foot_angle": 70
+        "far_foot_angle": 70,
+        "lower_leg_angle": 239.72,
+        "far_lower_leg_angle": 156.82
       }
     ],
     "fall": [
@@ -722,7 +765,9 @@
           3.65,
           -8.97
         ],
-        "far_foot_angle": -10
+        "far_foot_angle": -10,
+        "lower_leg_angle": 81.61,
+        "far_lower_leg_angle": 33.94
       },
       {
         "head": [
@@ -767,7 +812,9 @@
           3.83,
           -5.99
         ],
-        "far_foot_angle": -5
+        "far_foot_angle": -5,
+        "lower_leg_angle": 89.0,
+        "far_lower_leg_angle": 36.21
       },
       {
         "head": [
@@ -812,7 +859,9 @@
           3.83,
           -5.99
         ],
-        "far_foot_angle": -5
+        "far_foot_angle": -5,
+        "lower_leg_angle": 76.93,
+        "far_lower_leg_angle": 36.21
       },
       {
         "head": [
@@ -857,7 +906,9 @@
           3.83,
           -5.99
         ],
-        "far_foot_angle": -5
+        "far_foot_angle": -5,
+        "lower_leg_angle": 89.0,
+        "far_lower_leg_angle": 36.21
       }
     ],
     "hurt": [
@@ -904,7 +955,9 @@
           2.64,
           -6.7
         ],
-        "far_foot_angle": -20
+        "far_foot_angle": -20,
+        "lower_leg_angle": 83.91,
+        "far_lower_leg_angle": 38.3
       },
       {
         "head": [
@@ -949,7 +1002,9 @@
           2.43,
           -9.32
         ],
-        "far_foot_angle": -31
+        "far_foot_angle": -31,
+        "lower_leg_angle": 102.95,
+        "far_lower_leg_angle": 25.97
       },
       {
         "head": [
@@ -994,7 +1049,9 @@
           4.59,
           -4.46
         ],
-        "far_foot_angle": -5
+        "far_foot_angle": -5,
+        "lower_leg_angle": 78.21,
+        "far_lower_leg_angle": 26.45
       },
       {
         "head": [
@@ -1039,7 +1096,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       }
     ],
     "idle": [
@@ -1086,7 +1145,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       },
       {
         "head": [
@@ -1131,7 +1192,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       },
       {
         "head": [
@@ -1176,7 +1239,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 61.1,
+        "far_lower_leg_angle": 26.92
       },
       {
         "head": [
@@ -1221,7 +1286,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 61.1,
+        "far_lower_leg_angle": 26.92
       },
       {
         "head": [
@@ -1266,7 +1333,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 61.1,
+        "far_lower_leg_angle": 26.92
       },
       {
         "head": [
@@ -1311,7 +1380,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 61.1,
+        "far_lower_leg_angle": 26.92
       },
       {
         "head": [
@@ -1356,7 +1427,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       },
       {
         "head": [
@@ -1401,7 +1474,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       }
     ],
     "jump": [
@@ -1448,7 +1523,9 @@
           3.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 69.01,
+        "far_lower_leg_angle": 38.02
       },
       {
         "head": [
@@ -1493,7 +1570,9 @@
           2.32,
           -5.88
         ],
-        "far_foot_angle": -20
+        "far_foot_angle": -20,
+        "lower_leg_angle": 61.32,
+        "far_lower_leg_angle": 51.72
       },
       {
         "head": [
@@ -1538,7 +1617,9 @@
           4.15,
           -10.81
         ],
-        "far_foot_angle": -25
+        "far_foot_angle": -25,
+        "lower_leg_angle": 105.73,
+        "far_lower_leg_angle": -135.28
       },
       {
         "head": [
@@ -1583,7 +1664,9 @@
           4.0,
           -12.73
         ],
-        "far_foot_angle": -30
+        "far_foot_angle": -30,
+        "lower_leg_angle": 105.73,
+        "far_lower_leg_angle": 173.58
       },
       {
         "head": [
@@ -1628,7 +1711,9 @@
           4.48,
           -10.93
         ],
-        "far_foot_angle": -15
+        "far_foot_angle": -15,
+        "lower_leg_angle": 103.48,
+        "far_lower_leg_angle": -162.41
       },
       {
         "head": [
@@ -1673,7 +1758,9 @@
           3.65,
           -8.97
         ],
-        "far_foot_angle": -10
+        "far_foot_angle": -10,
+        "lower_leg_angle": 81.61,
+        "far_lower_leg_angle": 33.94
       }
     ],
     "run": [
@@ -1720,7 +1807,9 @@
           -9.41,
           -9.41
         ],
-        "far_foot_angle": -45
+        "far_foot_angle": -45,
+        "lower_leg_angle": -10.87,
+        "far_lower_leg_angle": 97.27
       },
       {
         "head": [
@@ -1765,7 +1854,9 @@
           -9.0,
           -10.73
         ],
-        "far_foot_angle": -30
+        "far_foot_angle": -30,
+        "lower_leg_angle": 38.02,
+        "far_lower_leg_angle": 126.78
       },
       {
         "head": [
@@ -1810,7 +1901,9 @@
           2.15,
           -8.81
         ],
-        "far_foot_angle": -25
+        "far_foot_angle": -25,
+        "lower_leg_angle": -14.72,
+        "far_lower_leg_angle": 17.38
       },
       {
         "head": [
@@ -1855,7 +1948,9 @@
           5.48,
           -8.93
         ],
-        "far_foot_angle": -15
+        "far_foot_angle": -15,
+        "lower_leg_angle": 70.76,
+        "far_lower_leg_angle": -28.08
       },
       {
         "head": [
@@ -1900,7 +1995,9 @@
           2.48,
           -2.93
         ],
-        "far_foot_angle": -15
+        "far_foot_angle": -15,
+        "lower_leg_angle": 97.27,
+        "far_lower_leg_angle": -10.87
       },
       {
         "head": [
@@ -1945,7 +2042,9 @@
           0.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 126.78,
+        "far_lower_leg_angle": 38.02
       },
       {
         "head": [
@@ -1990,7 +2089,9 @@
           -2.32,
           -4.88
         ],
-        "far_foot_angle": 20
+        "far_foot_angle": 20,
+        "lower_leg_angle": 17.38,
+        "far_lower_leg_angle": -14.72
       },
       {
         "head": [
@@ -2035,7 +2136,9 @@
           -8.85,
           -9.81
         ],
-        "far_foot_angle": -25
+        "far_foot_angle": -25,
+        "lower_leg_angle": -28.08,
+        "far_lower_leg_angle": 70.76
       }
     ],
     "swipe": [
@@ -2082,7 +2185,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 82.41,
+        "far_lower_leg_angle": 18.65
       },
       {
         "head": [
@@ -2127,7 +2232,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 70.26,
+        "far_lower_leg_angle": 15.25
       },
       {
         "head": [
@@ -2172,7 +2279,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 68.97,
+        "far_lower_leg_angle": 15.25
       },
       {
         "head": [
@@ -2217,7 +2326,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 81.38,
+        "far_lower_leg_angle": 18.65
       },
       {
         "head": [
@@ -2262,7 +2373,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 83.32,
+        "far_lower_leg_angle": 18.65
       },
       {
         "head": [
@@ -2307,7 +2420,9 @@
           5.0,
           -3.0
         ],
-        "far_foot_angle": 0
+        "far_foot_angle": 0,
+        "lower_leg_angle": 78.09,
+        "far_lower_leg_angle": 31.45
       }
     ]
   },
