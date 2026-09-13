@@ -1,5 +1,5 @@
 extends Node2D
-# Session state and input boundary for the Ember combat room (issue #20).
+# Session state, persistence, and input boundary for the Ember combat room.
 # Progression rules live in progression.gd (earning windows, thresholds, ties,
 # overflow, repeatable ranks, eight-selection cap). Gameplay numbers live in
 # tuning.gd. visual.gd is presentation-only. Death/rest restores encounters and
@@ -7,10 +7,15 @@ extends Node2D
 # room transitions, and crossing boundaries would not reset encounters either.
 const Tuning = preload('res://tuning.gd')
 const Progression = preload('res://progression.gd')
+const RunSave = preload('res://run_save.gd')
 const CHECKPOINT_POSITION = Vector2(70, 299)
+const CHECKPOINT_ID := 'ember_trial_entry'
 const PATH_IDS := ['searing_claws', 'flame_arc']
 const LEGACY_NAMES := {'searing_claws': 'burn', 'flame_arc': 'arc'}
 var progression
+var run_store
+var saved_run: Dictionary = {}
+var session_only := false
 var player
 var hp = 6.0
 var numen = 0
@@ -35,6 +40,8 @@ var ui
 var hud
 var status
 var menu
+var menu_title
+var menu_detail
 var choice
 var choice_title
 var choice_detail
@@ -61,8 +68,13 @@ func button_at(text_value, at, callback, parent):
 
 func _ready():
 	progression = Progression.new()
+	if run_store == null:
+		run_store = RunSave.new()
+	saved_run = run_store.load_run()
+	session_only = run_store.last_error != ''
 	for action in ['left', 'right', 'jump', 'dash', 'attack', 'pause', 'retry']:
-		InputMap.add_action(action)
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
 	for pair in [['left', KEY_A], ['left', KEY_LEFT], ['right', KEY_D], ['right', KEY_RIGHT], ['jump', KEY_SPACE], ['dash', KEY_SHIFT], ['attack', KEY_J], ['attack', KEY_X]]:
 		var e = InputEventKey.new()
 		e.physical_keycode = pair[1]
@@ -102,14 +114,16 @@ func _ready():
 	hud = label_at('', Vector2(16, 33))
 	status = label_at('', Vector2(16, 53), 11)
 	label_at('A/D or arrows move · Space jump · J/X action · Shift dash', Vector2(16, 315), 11)
-	label_at('E/K retry nearby · Esc pause · P presentation demo · N new session', Vector2(16, 332), 11)
+	label_at('E/K retry nearby · Esc pause · P presentation demo · N new game', Vector2(16, 332), 11)
 	menu = Panel.new()
 	menu.position = Vector2(110, 90)
 	menu.size = Vector2(420, 165)
 	ui.add_child(menu)
-	label_at('Movement and retry slice', Vector2(24, 15), 20, menu)
-	label_at('Move, jump, dash and retry from the nearby checkpoint.\nOrange warning → lunge → recovery. Jump or dash past attacks.\nPresentation settings are independent from gameplay tuning.', Vector2(24, 49), 12, menu)
-	button_at('Start [Enter]', Vector2(24, 120), start_run, menu)
+	menu_title = label_at('', Vector2(24, 15), 20, menu)
+	menu_detail = label_at('', Vector2(24, 49), 12, menu)
+	button_at('Continue [Enter]', Vector2(24, 120), continue_run, menu)
+	button_at('New Game [N]', Vector2(190, 120), new_game, menu)
+	refresh_menu()
 	choice = Panel.new()
 	choice.position = Vector2(40, 88)
 	choice.size = Vector2(560, 172)
@@ -125,7 +139,18 @@ func _ready():
 	sync_derived()
 	refresh()
 
-func start_run():
+func refresh_menu():
+	menu_title.text = 'Continue a saved run' if not saved_run.is_empty() else 'New game'
+	if session_only:
+		menu_detail.text = 'Persistent storage is unavailable. You can play, but this run lasts only for this browser session.'
+	elif not saved_run.is_empty():
+		menu_detail.text = 'Continue from the checkpoint with your typed numen window and upgrade ranks, or begin fresh.'
+	else:
+		menu_detail.text = 'Move, jump, dash and retry from the nearby checkpoint. Your progress saves automatically.'
+
+func new_game():
+	run_store.clear_run()
+	session_only = session_only or run_store.last_error != ''
 	progression.reset()
 	mixed = false
 	kills = 0
@@ -137,6 +162,38 @@ func start_run():
 	menu.hide()
 	choice.hide()
 	respawn(false)
+
+func start_run():
+	# Kept for the existing session boundary and tests; it is New Game.
+	new_game()
+
+func continue_run():
+	if saved_run.is_empty():
+		new_game()
+		return
+	run_store.restore_progression(progression, saved_run)
+	mixed = false
+	kills = 0
+	deaths = 0
+	playing = true
+	choosing = false
+	paused = false
+	choice_mode = 'paths'
+	menu.hide()
+	choice.hide()
+	respawn(false)
+	sync_derived()
+	note('Continued from checkpoint. Numen and upgrades restored.')
+
+func persist_run():
+	if not playing:
+		return
+	var run = run_store.make_run(CHECKPOINT_ID, progression)
+	if run_store.save_run(run):
+		saved_run = run
+	else:
+		session_only = true
+		note(run_store.last_error)
 
 func respawn(count = true):
 	# Death/rest checkpoint restore: encounters and health reset, while earned
@@ -161,6 +218,8 @@ func respawn(count = true):
 	wave = 0
 	wave_wait = Tuning.WAVE_WAIT_INITIAL
 	note('Checkpoint restored. Numen and upgrades retained.' if count else 'Defeat the Ember creatures. Earn numen toward evolution.')
+	if playing:
+		persist_run()
 
 func note(value):
 	message = value
@@ -189,9 +248,9 @@ func _unhandled_key_input(event):
 	match event.physical_keycode:
 		KEY_ENTER:
 			if not playing:
-				start_run()
+				continue_run()
 		KEY_N:
-			start_run()
+			new_game()
 		KEY_1:
 			if choosing:
 				choose_current_slot(0)
@@ -256,6 +315,7 @@ func apply_path_choice(path_id):
 		choice.hide()
 		note('Evolved! Ranks persist through death. Keep fighting toward Fully evolved (8).')
 		wave_wait = Tuning.WAVE_WAIT_AFTER_CHOICE
+	persist_run()
 
 func spawn_wave():
 	wave += 1
@@ -356,6 +416,7 @@ func _physics_process(delta):
 			for i in range(reward):
 				particles.append({'start': Vector2(enemy.x + i * 12, 277 - i * 8), 'time': 0.0})
 			wave_wait = Tuning.WAVE_WAIT_AFTER_KILL
+			persist_run()
 		else:
 			living.append(enemy)
 	enemies = living
@@ -402,6 +463,8 @@ func refresh():
 		hud.text = 'Health %.1f / %d   |   Ember numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	else:
 		hud.text = 'Health %.1f / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
+	if session_only:
+		hud.text += '   |   Session-only (storage unavailable)'
 	if choosing:
 		refresh_choice_panel()
 		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — progression numen rest' % wave)
@@ -430,6 +493,7 @@ func _process(_delta):
 			'burn_rank': burn_rank(), 'arc_rank': arc_rank(),
 			'swipe_reach': Tuning.swipe_reach(arc_rank()), 'burn_duration': Tuning.burn_duration(burn_rank()),
 			'wave': wave, 'kills': kills, 'deaths': deaths, 'retries': retries,
+			'checkpoint_id': CHECKPOINT_ID, 'has_saved_run': not saved_run.is_empty(), 'session_only': session_only,
 			'x': player.position.x, 'y': player.position.y,
 			'attack': player.attack_id, 'attack_active': player.attack_left > 0,
 			'attack_remaining': player.attack_left,

@@ -25,7 +25,11 @@ A single Ember combat-room slice: the Neutral Spirit, easy lunge and medium
 charge enemies with warnings/recovery, auto-collected graphical numen, paused
 Ember choices (Searing Claws burn / Flame Arc reach, repeatable to rank 8),
 the shared earning-window ladder (thresholds 8–42, eight-selection cap with a
-Fully evolved state), and checkpoint retry that retains numen and upgrades.
+Fully evolved state), checkpoint retry, and automatic versioned browser saves.
+The opening menu offers **Continue** for a saved run or **New Game**. Continue
+restores its checkpoint, typed numen earning window, selections, and upgrade
+ranks. If browser storage is unavailable, the menu explains that play remains
+available but the run is session-only.
 It's the feel foundation the rest of the game builds on.
 
 ## Run it
@@ -44,7 +48,8 @@ python3 -m http.server 8774 --directory docs --bind 127.0.0.1
 ```
 
 **Controls:** A/D or arrows to move, Space to jump, J/X to attack, Shift to
-dash, Esc to pause, E/K to retry near the checkpoint, N for a fresh run.
+dash, Esc to pause, E/K to retry near the checkpoint, Enter to Continue, and N
+for a New Game.
 
 ## For contributors
 
@@ -55,9 +60,13 @@ dash, Esc to pause, E/K to retry near the checkpoint, N for a fresh run.
   enemy warn/recovery); edit feel here, never in `visual.gd`.
 - `progression.gd` — earning-window rules (thresholds, ties, overflow,
   ranks, cap); later elements live in its catalog but only Ember is offered.
+- `run_save.gd` — versioned production run-save envelope and browser/file
+  storage boundary; it reserves stable world objective and modifier IDs.
 - `tests/test_progression.gd`, `tests/test_session.gd` — focused rule and
   session cases: `godot --headless --path . --script tests/test_progression.gd`
   (same for `test_session.gd`).
+- `tests/test_run_save.gd` — save/reload/restart behavior and controlled
+  session-only storage fallback.
 - `node browser-check.cjs` — Chrome smoke check (needs `npm ci` and
   `npx playwright install chromium`).
 - `python3 export.py --godot /path/to/Godot --templates /path/to/templates` —
