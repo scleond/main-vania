@@ -78,6 +78,20 @@ func _initialize():
 	reloaded.new_game()
 	check('New Game starts fresh and replaces saved run', reloaded.progression.window_total() == 0 and reloaded.progression.selections == 0 and reloaded.burn_rank() == 0, 'dirty')
 
+	# Persist the decision made during a tied dominant-element offer before a
+	# path has been chosen; a reload must remain on the selected element paths.
+	var tied = make_scene(storage)
+	tied.new_game()
+	tied.progression.earn('ember', 4)
+	tied.progression.earn('wind', 4)
+	tied.choosing = true
+	tied.choose_current_slot(1) # ELEMENTS order makes this Wind.
+	check('tied element choice is immediately saved', tied.progression.pending_element == 'wind' and storage.files.has(RunSave.SAVE_PATH), tied.progression.pending_element)
+	var tied_reloaded = make_scene(storage)
+	tied_reloaded.continue_run()
+	var tied_offer = tied_reloaded.progression.offer()
+	check('reload restores pending tied-element path offer', tied_reloaded.progression.pending_element == 'wind' and tied_offer['kind'] == 'paths' and tied_offer['element'] == 'wind', str(tied_offer))
+
 	var unavailable = MemoryStorage.new()
 	unavailable.available = false
 	var fallback = make_scene(unavailable)
@@ -88,6 +102,8 @@ func _initialize():
 	check('session-only fallback keeps gameplay authoritative', fallback.playing and fallback.progression.window_total() == 3 and fallback.session_only, str(fallback.progression.window_total()))
 	first.free()
 	reloaded.free()
+	tied.free()
+	tied_reloaded.free()
 	fallback.free()
 
 	print('---')

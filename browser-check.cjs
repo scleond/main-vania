@@ -1,12 +1,14 @@
 // Chrome smoke check for the production movement boundary.
 const { chromium } = require('playwright');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const result = { browser: 'chromium', checks: {}, errors: [] };
 const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; if (!pass) throw Error(name); };
-(async () => { try {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+(async () => { let context; let profile; try {
+  profile = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-browser-'));
+  context = await chromium.launchPersistentContext(profile, { headless: true, viewport: { width: 1280, height: 720 } });
+  let page = await context.newPage();
   page.on('pageerror', e => result.errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') result.errors.push(m.text()); });
   await page.goto(process.env.VANIA_URL || 'http://127.0.0.1:8774/');
@@ -15,6 +17,12 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   await page.keyboard.press('Enter');
   let state = await read();
   check('session starts', state.playing, state);
+  // Fail fast if docs/ has not been regenerated from the source carrying the
+  // issue-21 browser-save probe. This prevents a stale export from passing a
+  // movement-only smoke check while silently omitting Continue/New Game.
+  check('web build includes issue-21 save boundary',
+    typeof state.has_saved_run === 'boolean' && typeof state.session_only === 'boolean' &&
+    typeof state.checkpoint_id === 'string', state);
   const exercisePresentation = async presentation => {
     state = await read();
     if (state.presentation !== presentation) {
@@ -83,9 +91,40 @@ const check = (name, pass, detail) => { result.checks[name] = { pass, detail }; 
   check('session offers two Ember paths', state.offer_kind === 'paths', state);
   await page.keyboard.press('1'); await page.waitForTimeout(200); state = await read();
   check('Searing Claws applies burn rank', !state.choosing && state.burn_rank === 1 && state.burn_duration > 0 && state.upgrade === 'burn', state);
+  // A checkpoint retry is a save boundary. Verify reload and a new browser
+  // process observe the persisted run, then verify New Game replaces it.
+  await page.keyboard.press('k'); await page.waitForTimeout(150);
+  const saved = await read();
+  const sameProgress = candidate => candidate.selections === saved.selections &&
+    candidate.numen_window === saved.numen_window &&
+    candidate.burn_rank === saved.burn_rank && candidate.arc_rank === saved.arc_rank &&
+    candidate.checkpoint_id === saved.checkpoint_id;
+  check('retry creates a saved run', saved.has_saved_run, saved);
+  await page.reload(); await page.waitForFunction(() => window.__vania_probe?.ready, null, { timeout: 60000 });
+  state = await read(); check('reload offers Continue', !state.playing && state.has_saved_run, state);
+  await page.keyboard.press('Enter'); await page.waitForTimeout(150); state = await read();
+  check('reload Continue preserves progress', state.playing && sameProgress(state), { saved, state });
+  await context.close();
+  context = await chromium.launchPersistentContext(profile, { headless: true, viewport: { width: 1280, height: 720 } });
+  page = await context.newPage();
+  page.on('pageerror', e => result.errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') result.errors.push(m.text()); });
+  await page.goto(process.env.VANIA_URL || 'http://127.0.0.1:8774/');
+  await page.waitForFunction(() => window.__vania_probe?.ready, null, { timeout: 60000 });
+  state = await read(); check('browser restart offers Continue', !state.playing && state.has_saved_run, state);
+  await page.keyboard.press('Enter'); await page.waitForTimeout(150); state = await read();
+  check('browser restart Continue preserves progress', state.playing && sameProgress(state), { saved, state });
+  await page.keyboard.press('n'); await page.waitForTimeout(150); state = await read();
+  check('New Game clears saved progress', state.playing && state.selections === 0 && state.numen_window === 0 && state.burn_rank === 0 && state.arc_rank === 0, state);
+  const fallback = await context.newPage();
+  await fallback.goto((process.env.VANIA_URL || 'http://127.0.0.1:8774/') + '?numen_storage=unavailable');
+  await fallback.waitForFunction(() => window.__vania_probe?.ready, null, { timeout: 60000 });
+  const fallbackState = await fallback.evaluate(() => window.__vania_probe);
+  check('unavailable storage exposes session-only fallback', fallbackState.session_only && !fallbackState.has_saved_run, fallbackState);
+  await fallback.keyboard.press('Enter'); await fallback.waitForTimeout(150);
+  check('session-only fallback starts gameplay', (await fallback.evaluate(() => window.__vania_probe)).playing, await fallback.evaluate(() => window.__vania_probe));
   check('no page errors', result.errors.length === 0, result.errors);
   result.status = 'passed'; await page.screenshot({ path: path.join(__dirname, 'chromium.png') });
-  await browser.close();
 } catch (error) { result.status = 'failed'; result.failure = String(error); }
-finally { fs.writeFileSync(path.join(__dirname, 'chromium-results.json'), JSON.stringify(result, null, 2)); console.log(JSON.stringify(result, null, 2)); process.exitCode = result.status === 'passed' ? 0 : 1; }
+finally { if (context) await context.close(); if (profile) fs.rmSync(profile, { recursive: true, force: true }); fs.writeFileSync(path.join(__dirname, 'chromium-results.json'), JSON.stringify(result, null, 2)); console.log(JSON.stringify(result, null, 2)); process.exitCode = result.status === 'passed' ? 0 : 1; }
 })();

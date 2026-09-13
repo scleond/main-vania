@@ -2,11 +2,12 @@
 
 The checked-in Web loader and artifacts (`index.html`, `index.js`, `index.pck`, and
 `index.wasm`) remain from the last successful export and continue to reference one
-another by their checked-in names.
+another by their checked-in names. They predate issue #21 and **do not contain**
+its Continue/New Game, versioned browser-save, or session-only fallback behavior.
+Do not use `docs/` to validate those behaviors until it is regenerated.
 
-This workspace could not regenerate that export after the current `main.gd` wording
-change (`Wave %d  |  One earned upgrade available`): Godot 4.7.2 requires these
-matching templates, which are not installed here:
+This workspace could not regenerate that export for issue #21: Godot 4.7.2
+requires these matching templates, which are not installed here:
 
 - `web_nothreads_debug.zip`
 - `web_nothreads_release.zip`

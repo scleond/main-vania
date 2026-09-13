@@ -12,14 +12,25 @@ const EMPTY_WORLD := {'objectives': {}, 'modifier_assignments': {}}
 
 class FileStorage:
 	extends RefCounted
+	var force_unavailable := false
+
+	func _init() -> void:
+		# A narrow browser-smoke seam: it exercises the same failure path as a
+		# blocked store without claiming to emulate every privacy policy.
+		if OS.has_feature('web'):
+			force_unavailable = JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('numen_storage') === 'unavailable'")
 
 	func read_text(path: String) -> Dictionary:
+		if force_unavailable:
+			return {'found': false, 'unavailable': true}
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
 			return {'found': false, 'unavailable': FileAccess.get_open_error() != ERR_FILE_NOT_FOUND}
 		return {'found': true, 'text': file.get_as_text()}
 
 	func write_text(path: String, text: String) -> bool:
+		if force_unavailable:
+			return false
 		var file := FileAccess.open(path, FileAccess.WRITE)
 		if file == null:
 			return false
@@ -27,6 +38,8 @@ class FileStorage:
 		return file.get_error() == OK
 
 	func erase(path: String) -> bool:
+		if force_unavailable:
+			return false
 		return not FileAccess.file_exists(path) or DirAccess.remove_absolute(path) == OK
 
 

@@ -284,6 +284,9 @@ func choose_current_slot(slot):
 	if current['kind'] == 'elements':
 		var tied = current['elements']
 		if slot < tied.size() and progression.choose_element(tied[slot]):
+			# The tied-element decision is part of the durable earning window;
+			# persist it before the player selects a path or reloads the browser.
+			persist_run()
 			refresh_choice_panel()
 		return
 	if current['kind'] != 'paths':
