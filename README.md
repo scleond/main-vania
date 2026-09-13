@@ -47,10 +47,9 @@ python3 -m http.server 8774 --directory docs --bind 127.0.0.1
 # http://127.0.0.1:8774/ — press Enter to start
 ```
 
-The checked-in `docs/` export is currently the pre-issue-21 artifact and does
-not yet contain Continue/New Game or browser saves. Rebuild it with matching
-Godot web templates before using this command to verify this feature; see
-[`docs/EXPORT.md`](docs/EXPORT.md).
+The checked-in `docs/` export contains the issue-21 Continue/New Game and
+browser-save behavior. To regenerate it after source changes, use matching
+Godot web templates as documented in [`docs/EXPORT.md`](docs/EXPORT.md).
 
 **Controls:** A/D or arrows to move, Space to jump, J/X to attack, Shift to
 dash, Esc to pause, E/K to retry near the checkpoint, Enter to Continue, and N
