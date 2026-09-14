@@ -4,7 +4,6 @@ extends CharacterBody2D
 # cannot change movement, collision, or attack outcomes.
 const Tuning = preload('res://tuning.gd')
 var active=false
-var mixed=false
 var upgrade=''
 var arc_rank=0
 var burn_rank=0
@@ -18,7 +17,6 @@ var invulnerable=0.0
 var clock=0.0
 var coyote=0.0
 var jump_buffer=0.0
-var air_used=false
 var visual
 func _ready():
  collision_layer=2
@@ -45,10 +43,8 @@ func _physics_process(delta):
  jump_buffer=maxf(0,jump_buffer-delta)
  if is_on_floor():
   coyote=Tuning.COYOTE_DURATION
-  air_used=false
  if Input.is_action_just_pressed('jump'):jump_buffer=Tuning.JUMP_BUFFER_DURATION
- if jump_buffer>0 and (coyote>0 or (mixed and not air_used)):
-  if coyote<=0:air_used=true
+ if jump_buffer>0 and coyote>0:
   velocity.y=-Tuning.JUMP_SPEED
   coyote=0
   jump_buffer=0
@@ -56,7 +52,7 @@ func _physics_process(delta):
  if axis!=0 and attack_left<=0:facing=signf(axis)
  if Input.is_action_just_pressed('dash') and dash_wait<=0:
   dash_left=Tuning.DASH_DURATION
-  dash_wait=Tuning.MIXED_DASH_COOLDOWN if mixed else Tuning.DASH_COOLDOWN
+  dash_wait=Tuning.DASH_COOLDOWN
  if Input.is_action_just_pressed('attack') and attack_wait<=0 and dash_left<=0:
   attack_left=Tuning.SWIPE_DURATION
   attack_wait=Tuning.SWIPE_COOLDOWN

@@ -234,6 +234,26 @@ executed outcome comparison remains parent work.
 
 ## Review status
 
+**Issue #23 completion pass: static inspection only.** Existing shared-workspace
+changes to Reprisal rank polish, native pixel rounding and family controls are
+preserved. Slipstream's rank marks now address its compact eight-column motif
+instead of the discarded wider artwork. The attachment inspector reports each
+enabled path's actual replacement motif, rank, angle and snapped local origin;
+Reprisal is identified as a head texture rather than a mounted chest effect.
+Reprisal's eight `rank_polish` values remain independently editable artwork data.
+
+The released player no longer contains the dormant mixed-preview air jump,
+shortened dash cooldown or damage reduction branches. The diagnostic `mixed`
+field remains constant false for compatibility. Earned Ember ranks still flow
+from progression to presentation; the workshop remains the only custom-build
+surface. Replacement sequences and attachment offsets are consumed only by
+presentation code; attack reach, hit windows and movement use gameplay tuning.
+
+No tests, gameplay execution, browser execution or export were run for this
+pass. Static inspection does not establish visual acceptance or measured
+movement/attack equivalence. Gameplay-scale silhouette and hand/head/body
+alignment review, including replacement poses, remain unverified for these edits.
+
 **Latest Bramble/Stonehide correction: unvalidated implementation.** Parent owns
 all validation and visual acceptance; no checks or exports were run for it.
 Earlier verification below applies to the preceding passes only.

@@ -20,7 +20,6 @@ var player
 var hp = 6.0
 var numen = 0
 var upgrade = ''
-var mixed = false
 var playing = false
 var choosing = false
 var paused = false
@@ -153,7 +152,6 @@ func new_game():
 	run_store.clear_run()
 	session_only = session_only or run_store.last_error != ''
 	progression.reset()
-	mixed = false
 	kills = 0
 	deaths = 0
 	playing = true
@@ -173,7 +171,6 @@ func continue_run():
 		new_game()
 		return
 	run_store.restore_progression(progression, saved_run)
-	mixed = false
 	kills = 0
 	deaths = 0
 	playing = true
@@ -341,7 +338,6 @@ func _physics_process(delta):
 	player.upgrade = upgrade
 	player.arc_rank = arc_rank()
 	player.burn_rank = burn_rank()
-	player.mixed = mixed
 	if is_instance_valid(player.visual):
 		player.visual.path_ranks = {'searing_claws': burn_rank(), 'flame_arc': arc_rank()}
 		player.visual.fully_evolved = progression.is_fully_evolved()
@@ -401,7 +397,7 @@ func _physics_process(delta):
 				enemy.hp -= Tuning.BURN_TICK_DAMAGE
 				enemy.flash = 0.1
 		if enemy.hp > 0 and enemy.mode == 'lunge' and absf(enemy.x - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266 and player.invulnerable <= 0 and player.dash_left <= 0:
-			hp -= (Tuning.MEDIUM_DAMAGE if enemy.medium else Tuning.EASY_DAMAGE) * (0.5 if mixed else 1.0)
+			hp -= Tuning.MEDIUM_DAMAGE if enemy.medium else Tuning.EASY_DAMAGE
 			player.invulnerable = Tuning.INVULNERABLE_DURATION
 			player.velocity.y = Tuning.HIT_LAUNCH_Y
 			if hp > 0 and is_instance_valid(player.visual):
@@ -470,8 +466,6 @@ func refresh():
 	if choosing:
 		refresh_choice_panel()
 		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d Numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — Ember aura active; Numen no longer accumulates' % wave)
-	if mixed:
-		status.text += '  |  Mixed preview ON'
 
 func probe_enemies():
 	var out = []
@@ -485,7 +479,7 @@ func _process(_delta):
 	if OS.has_feature('web'):
 		JavaScriptBridge.eval('window.__vania_probe = ' + JSON.stringify({
 			'ready': true, 'playing': playing, 'choosing': choosing, 'paused': paused,
-			'hp': hp, 'numen': numen, 'upgrade': upgrade, 'mixed': mixed,
+			'hp': hp, 'numen': numen, 'upgrade': upgrade, 'mixed': false,
 			'numen_window': progression.window_total(), 'window_counts': progression.window_counts(),
 			'next_threshold': progression.next_threshold(), 'window_requirement': progression.window_requirement(),
 			'selections': progression.selections, 'pending': progression.pending_level_ups(),

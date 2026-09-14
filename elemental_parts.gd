@@ -68,7 +68,8 @@ func dominant_family(ranks: Dictionary) -> String:
 
 func body_texture(name: String, atlas: Texture2D, family: String, ranks: Dictionary = {}) -> Texture2D:
  if family == '': return atlas
- var texture_key = ':reprisal' if int(ranks.get('reprisal',0)) > 0 else ''
+ var reprisal_rank = clampi(int(ranks.get('reprisal',0)),0,8)
+ var texture_key = ':reprisal:'+str(reprisal_rank)
  var key = name+':'+family+texture_key
  if body_cache.has(key): return body_cache[key]
  # Recolor only existing cyan spike pixels, in each pose's local head space.
@@ -77,7 +78,7 @@ func body_texture(name: String, atlas: Texture2D, family: String, ranks: Diction
  pixels.convert(Image.FORMAT_RGBA8)
  var palette = artwork.palettes[family]
  var spike_palette = artwork.spike_palettes.get(family,palette)
- var stone_texture = int(ranks.get('reprisal',0)) > 0
+ var stone_texture = reprisal_rank > 0
  for frame in attachments.motions[name].size():
   var sockets = pose(name,frame)
   var head = Vector2(sockets.head[0],sockets.head[1])
@@ -95,6 +96,8 @@ func body_texture(name: String, atlas: Texture2D, family: String, ranks: Diction
      # stay inside the selected dominant family instead of using stone ink.
      var facet = absi((floori(local.x) + floori(local.y) * 2) % 5)
      tint = Color(spike_palette[1 if facet == 0 else (3 if facet == 4 else 2)])
+     if facet > 0 and facet < 4:
+      tint = tint.lerp(Color(spike_palette[3]),float(artwork.parts.reprisal.rank_polish[reprisal_rank-1]))
     else:
      tint = Color(spike_palette[3 if light > 0.85 else (2 if light > 0.55 else 1)])
     tint.a = color.a

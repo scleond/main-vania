@@ -35,7 +35,7 @@ function dominantFamily() {
 }
 function bodyImage(family, reprisal) {
   if (!family) return images[name];
-  const key = name + ':' + family + (reprisal ? ':reprisal' : '');
+  const key = name + ':' + family + ':reprisal:' + reprisal;
   if (bodyCache.has(key)) return bodyCache.get(key);
   const body = document.createElement('canvas');
   body.width = images[name].width; body.height = 64;
@@ -54,9 +54,14 @@ function bodyImage(family, reprisal) {
       const [r, g, b, alpha] = data.slice(i, i + 4);
       if (!alpha || g <= r * 1.2 || b <= r * 1.2 || g <= .25 * 255) continue;
       const light = Math.max(r, g, b) / 255;
-      const tint = stoneTexture
+      let tint = stoneTexture
         ? palette[Math.abs((Math.floor(localX) + Math.floor(localY) * 2) % 5) === 0 ? 1 : (Math.abs((Math.floor(localX) + Math.floor(localY) * 2) % 5) === 4 ? 3 : 2)]
         : palette[light > .85 ? 3 : light > .55 ? 2 : 1];
+      const facet = Math.abs((Math.floor(localX) + Math.floor(localY) * 2) % 5);
+      if (stoneTexture && facet > 0 && facet < 4) {
+        const polish = art.parts.reprisal.rank_polish[reprisal - 1];
+        tint = tint.map((channel, i) => Math.round(channel + (palette[3][i] - channel) * polish));
+      }
       data.set(tint, i);
     }
   });
@@ -136,13 +141,13 @@ function layer(ctx, pose, side, replacement) {
       if (mount.layer !== side) continue;
       const offset = replacement ? (alternate.offset_overrides[path] ?? mount.offset) : mount.offset;
       const anchor = pose[mount.anchor], angle = pose[mount.angle_anchor ?? 'angle'] * Math.PI / 180;
-      const ox = Math.round(anchor[0] + offset[0] * Math.cos(angle) - offset[1] * Math.sin(angle));
-      const oy = Math.round(anchor[1] + offset[0] * Math.sin(angle) + offset[1] * Math.cos(angle));
+      const ox = nativeRound(anchor[0] + offset[0] * Math.cos(angle) - offset[1] * Math.sin(angle));
+      const oy = nativeRound(anchor[1] + offset[0] * Math.sin(angle) + offset[1] * Math.cos(angle));
       const maskId = mount.occluder ?? '', phase = mount.phase ?? 0;
       part.growth.forEach((growth, i) => {
         if (rank < growth.min_rank) return;
         const [x, y] = growth.offset;
-        motif(ctx, growth.motif, Math.round(ox + x * Math.cos(angle) - y * Math.sin(angle)), Math.round(oy + x * Math.sin(angle) + y * Math.cos(angle)), angle, palette, i + 1 + phase, [], 1, pose, maskId);
+        motif(ctx, growth.motif, nativeRound(ox + x * Math.cos(angle) - y * Math.sin(angle)), nativeRound(oy + x * Math.sin(angle) + y * Math.cos(angle)), angle, palette, i + 1 + phase, [], 1, pose, maskId);
       });
       motif(ctx, mount.motif ?? part.motif, ox, oy, angle, palette, phase, part.rank_marks, rank, pose, maskId);
     }
@@ -158,7 +163,7 @@ function sprite(ctx, i, x, y, scale, left, copy, replacement) {
     ink.drawImage(auraImage(f, family), -32 - pad, -60 - pad);
   }
   layer(ink, pose, 'rear', replacement);
-  ink.drawImage(bodyImage(family, enabled.reprisal && ranks.reprisal > 0), f * 64, 0, 64, 64, -32, -60, 64, 64);
+  ink.drawImage(bodyImage(family, enabled.reprisal ? ranks.reprisal : 0), f * 64, 0, 64, 64, -32, -60, 64, 64);
   layer(ink, pose, 'body_under', replacement);
   layer(ink, pose, 'body_effect', replacement);
   layer(ink, pose, 'body_front', replacement);
@@ -189,6 +194,25 @@ function sprite(ctx, i, x, y, scale, left, copy, replacement) {
   ctx.restore();
 }
 function label(ctx, text, x, y) { ctx.fillStyle = '#bacaca'; ctx.font = '13px system-ui'; ctx.fillText(text, x, y); }
+function inspectPart(path, pose, replacement) {
+  const partId = replacement ? (alternate.part_overrides[path] ?? path) : path;
+  const part = art.parts[partId];
+  // Texture treatments use the body pixels, not the legacy mount recipe.
+  if (part.texture) return {part: partId, rank: ranks[path], texture: part.texture, anchor: 'head'};
+  return {
+    part: partId, rank: ranks[path],
+    mounts: (attachments.mounts[path].instances ?? [attachments.mounts[path]]).map(mount => {
+      const offset = replacement ? (alternate.offset_overrides[path] ?? mount.offset) : mount.offset;
+      const anchor = pose[mount.anchor], degrees = pose[mount.angle_anchor ?? 'angle'];
+      const angle = degrees * Math.PI / 180;
+      return {...mount, motif: mount.motif ?? part.motif, offset, angle: degrees,
+        origin: [
+          nativeRound(anchor[0] + offset[0] * Math.cos(angle) - offset[1] * Math.sin(angle)),
+          nativeRound(anchor[1] + offset[0] * Math.sin(angle) + offset[1] * Math.cos(angle))
+        ]};
+    })
+  };
+}
 function draw() {
   if (!motions) return;
   const m = motions[name], replacement = $('alternate').checked, left = $('flip').checked;
@@ -213,10 +237,8 @@ function draw() {
   $('budget').textContent = `${count}/8 selections${count > 8 ? ' — impossible stress preview' : ''}`;
   $('sockets').textContent = $('anchors').checked ? JSON.stringify({
     pose: attachments.motions[name][shown],
-    emberMounts: Object.fromEntries(['searing_claws', 'flame_arc'].map(path => [path,
-      (attachments.mounts[path].instances ?? [attachments.mounts[path]]).map(mount => ({...mount,
-        offset: replacement ? (alternate.offset_overrides[path] ?? mount.offset) : mount.offset
-      }))]))
+    mounts: Object.fromEntries(paths.filter(path => enabled[path]).map(path => [path,
+      inspectPart(path, attachments.motions[name][shown], replacement)]))
   }, null, 2) : '';
   const strip = $('strip').getContext('2d'); strip.clearRect(0, 0, 1280, 170);
   for (let i = 0; i < m.frames.length; i++) {
@@ -267,7 +289,7 @@ try {
     json('element-parts.json'), json('element-attachments.json'), json('element-presentation-alternate.json'), json('spirit-motions.json')
   ]);
   paths = Object.keys(attachments.mounts);
-  for (const family of Object.keys(art.palettes)) {
+  for (const family of art.family_order) {
     const box = document.createElement('fieldset'), legend = document.createElement('legend');
     legend.textContent = family; box.append(legend);
     for (const p of paths.filter(p => art.parts[p].family === family)) {
