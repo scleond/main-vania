@@ -72,6 +72,7 @@ const WAVE_WAIT_INITIAL := 0.6
 const PARTICLE_LIFETIME := 0.65
 # --- Ember section (issue #24) ---
 const SECTION_EMBER := 'ember'
+const MAX_ACTIVE_THREATS_PER_ROOM := 3
 # Checkpoints: entry heal and pre-miniboss heal.
 const CHECKPOINT_EMBER_ENTRY := 'ember_entry'
 const CHECKPOINT_EMBER_PREBOSS := 'ember_preboss'

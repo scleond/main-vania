@@ -13,7 +13,7 @@ const CHECKPOINT_ID := 'ember_trial_entry'
 const PATH_IDS := ['searing_claws', 'flame_arc']
 const LEGACY_NAMES := {'searing_claws': 'burn', 'flame_arc': 'arc'}
 # Section connection points for later world assembly (stable IDs, no positions).
-const SECTION_CONNECTION := {'id': 'ember', 'objective': Tuning.SECTION_OBJECTIVE_EMBER, 'influence_slots': Tuning.INFLUENCE_SLOTS}
+const SECTION_CONNECTION := {'id': Tuning.SECTION_EMBER, 'objective': Tuning.SECTION_OBJECTIVE_EMBER, 'influence_slots': Tuning.INFLUENCE_SLOTS}
 # Authored encounter layout: ~18 easy, 2 medium across the route.
 # Each entry: {x, medium, room} — room groups enable zone-based spawning.
 const EMBER_ROUTE_ENCOUNTERS := [
@@ -117,13 +117,10 @@ var miniboss_spawned := false
 var encounter_index := 0
 var encounter_wait := 0.0
 var route_enemies: Array = []
-var miniboss_phase := ''
-var miniboss_timer := 0.0
-var miniboss_dir := -1.0
 var miniboss_hit_id := -1
 var miniboss_flash := 0.0
 var miniboss_fire_cooldown := 0.0
-var skip_spawn_frames := 0
+var spawn_queue: Array = []
 
 func label_at(text_value, at, size = 12, parent = null):
 	var label = Label.new()
@@ -305,13 +302,13 @@ func respawn(count = true):
 	route_enemies.clear()
 	miniboss = {}
 	miniboss_spawned = false
-	miniboss_phase = ''
-	miniboss_timer = 0.0
 	miniboss_hit_id = -1
 	miniboss_flash = 0.0
 	miniboss_fire_cooldown = 0.0
 	shrine_interact = false
 	shrine_timer = 0.0
+	spawn_queue.clear()
+	section_kills = 0
 	# Don't reset route_cleared — only new_game should reset the authored route.
 	_update_room()
 	# Ensure hp is fully restored after all state resets.
@@ -327,8 +324,9 @@ func note(value):
 	message_left = 4.0
 
 func can_retry_nearby():
-	var checkpoint_pos = CHECKPOINT_EMBER_ENTRY_POS if active_checkpoint_id == '' or active_checkpoint_id == Tuning.CHECKPOINT_EMBER_ENTRY else CHECKPOINT_EMBER_PREBOSS_POS
-	return player.position.distance_to(checkpoint_pos) <= Tuning.CHECKPOINT_RETRY_RANGE
+	var entry_dist = player.position.distance_to(CHECKPOINT_EMBER_ENTRY_POS)
+	var preboss_dist = player.position.distance_to(CHECKPOINT_EMBER_PREBOSS_POS)
+	return entry_dist <= Tuning.CHECKPOINT_RETRY_RANGE or preboss_dist <= Tuning.CHECKPOINT_RETRY_RANGE
 
 func burn_rank():
 	return progression.rank_of('searing_claws')
@@ -355,11 +353,10 @@ func _init_section():
 	encounter_wait = 0.0
 	route_enemies.clear()
 	miniboss = {}
-	miniboss_phase = ''
-	miniboss_timer = 0.0
 	miniboss_hit_id = -1
 	miniboss_flash = 0.0
 	miniboss_fire_cooldown = 0.0
+	spawn_queue.clear()
 
 func _restore_section_state():
 	# Restore persistent section state from the saved run.
@@ -391,13 +388,15 @@ func _update_room():
 			return
 
 func _check_checkpoint_heal():
-	# Heal at checkpoints when player touches them.
+	# Heal at checkpoints when player touches them. Triggers on re-visit
+	# if the player is damaged, not only on first activation.
 	var at_entry = player.position.distance_to(CHECKPOINT_EMBER_ENTRY_POS) < Tuning.CHECKPOINT_RETRY_RANGE
 	var at_preboss = player.position.distance_to(CHECKPOINT_EMBER_PREBOSS_POS) < Tuning.CHECKPOINT_RETRY_RANGE
 	if at_entry:
 		if active_checkpoint_id != Tuning.CHECKPOINT_EMBER_ENTRY:
 			active_checkpoint_id = Tuning.CHECKPOINT_EMBER_ENTRY
 			active_checkpoint_pos = CHECKPOINT_EMBER_ENTRY_POS
+		if hp < Tuning.PLAYER_MAX_HP:
 			hp = Tuning.PLAYER_MAX_HP
 			note('Entry checkpoint reached. Health restored.')
 			persist_run()
@@ -405,17 +404,18 @@ func _check_checkpoint_heal():
 		if active_checkpoint_id != Tuning.CHECKPOINT_EMBER_PREBOSS:
 			active_checkpoint_id = Tuning.CHECKPOINT_EMBER_PREBOSS
 			active_checkpoint_pos = CHECKPOINT_EMBER_PREBOSS_POS
+		if hp < Tuning.PLAYER_MAX_HP:
 			hp = Tuning.PLAYER_MAX_HP
 			note('Pre-boss checkpoint reached. Health restored.')
 			persist_run()
 
-func _try_shrine_interaction():
-	# Attempt to awaken the shrine when near it and miniboss is defeated.
+func _try_shrine_interaction(delta):
+	# Require explicit hold input near the shrine for 1.5s. Frame-rate-independent.
 	if not miniboss_defeated or shrine_awakened:
 		return
-	if player.position.distance_to(SHRINE_POSITION) < 60:
+	if player.position.distance_to(SHRINE_POSITION) < 60 and Input.is_action_pressed('attack'):
 		shrine_interact = true
-		shrine_timer += 0.016
+		shrine_timer += delta
 		if shrine_timer >= Tuning.SHRINE_AWAKEN_DURATION:
 			shrine_awakened = true
 			shrine_interact = false
@@ -507,23 +507,39 @@ func apply_path_choice(path_id):
 		wave_wait = Tuning.WAVE_WAIT_AFTER_CHOICE
 	persist_run()
 
-func spawn_wave():
-	# Section encounter spawning: place enemies from the authored route.
+func _spawn_room_encounters():
+	# Section encounter spawning: place enemies from the authored route,
+	# capping concurrent active threats per room to prevent overwhelming the player.
 	if route_cleared:
 		return
-	# Spawn enemies from the current room's encounters.
-	var spawned = false
+	var active_count = 0
+	for e in enemies:
+		var b = EMBER_ROOM_BOUNDS.get(room, {'left': 0.0, 'right': 0.0})
+		if e.x >= b['left'] and e.x <= b['right']:
+			active_count += 1
+	# Drain any queued encounters that fit within the cap.
+	while not spawn_queue.is_empty() and active_count < Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
+		var enc_idx = spawn_queue.pop_front()
+		var enc = EMBER_ROUTE_ENCOUNTERS[enc_idx]
+		add_enemy(enc['x'], enc['medium'])
+		active_count += 1
+	# Push encounters from the route into the queue up to the cap.
 	while encounter_index < EMBER_ROUTE_ENCOUNTERS.size():
 		var enc = EMBER_ROUTE_ENCOUNTERS[encounter_index]
 		if enc['room'] == room:
-			add_enemy(enc['x'], enc['medium'])
+			if active_count < Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
+				add_enemy(enc['x'], enc['medium'])
+				active_count += 1
+			else:
+				spawn_queue.append(encounter_index)
 			encounter_index += 1
-			spawned = true
 		elif EMBER_ROOM_BOUNDS.has(enc['room']) and EMBER_ROOM_BOUNDS[enc['room']]['left'] > EMBER_ROOM_BOUNDS[room]['right']:
 			break
 		else:
 			encounter_index += 1
-	if not spawned and encounter_index >= EMBER_ROUTE_ENCOUNTERS.size():
+	if not spawn_queue.is_empty():
+		return
+	if encounter_index >= EMBER_ROUTE_ENCOUNTERS.size() and enemies.is_empty():
 		route_cleared = true
 
 func add_enemy(x, medium):
@@ -544,9 +560,6 @@ func _spawn_miniboss():
 	if not route_cleared and encounter_index < EMBER_ROUTE_ENCOUNTERS.size():
 		return
 	miniboss_spawned = true
-	miniboss_phase = 'idle'
-	miniboss_timer = Tuning.MINIBOSS_IDLE_TELL
-	miniboss_dir = -1.0
 	miniboss_hit_id = -1
 	miniboss_flash = 0.0
 	miniboss_fire_cooldown = Tuning.MINIBOSS_FIRE_WAVE_INTERVAL
@@ -554,8 +567,8 @@ func _spawn_miniboss():
 		'x': MINIBOSS_POSITION.x,
 		'hp': Tuning.MINIBOSS_HP,
 		'max_hp': Tuning.MINIBOSS_HP,
-		'mode': 'idle',
-		'timer': Tuning.MINIBOSS_IDLE_TELL,
+		'phase': 'idle',
+		'timer': Tuning.MINIBOSS_IDLE_DURATION,
 		'dir': -1.0,
 		'hit_id': -1,
 		'burn': 0.0,
@@ -571,32 +584,37 @@ func _process_miniboss(delta):
 	miniboss.timer -= delta
 	var difference = player.position.x - miniboss['x']
 	miniboss.dir = signf(difference) if absf(difference) > 10 else miniboss.dir
-	match miniboss.phase if miniboss.has('phase') else miniboss_phase:
+	match miniboss.phase:
 		'idle':
+			# Approach the player while idle.
+			if absf(difference) > Tuning.MINIBOSS_TRIGGER_RANGE:
+				miniboss.x += miniboss.dir * Tuning.MINIBOSS_APPROACH_SPEED * delta
 			if miniboss.timer <= 0:
 				# Choose attack: slam or fire wave.
 				if absf(difference) < Tuning.MINIBOSS_TRIGGER_RANGE:
-					miniboss_phase = 'warn_slam'
+					miniboss.phase = 'warn_slam'
 					miniboss.timer = Tuning.MINIBOSS_WARN_DURATION
-				else:
-					miniboss_phase = 'fire_tell'
+				elif miniboss_fire_cooldown <= 0:
+					miniboss.phase = 'fire_tell'
 					miniboss.timer = Tuning.MINIBOSS_IDLE_TELL
+				else:
+					miniboss.timer = Tuning.MINIBOSS_IDLE_DURATION
 		'warn_slam':
 			# Visual tell: warning line drawn toward player.
 			if miniboss.timer <= 0:
-				miniboss_phase = 'slam'
+				miniboss.phase = 'slam'
 				miniboss.timer = Tuning.MINIBOSS_SLAM_DURATION
 		'slam':
 			# Rush toward player position.
 			miniboss.x += miniboss.dir * Tuning.MINIBOSS_SLAM_SPEED * delta
 			if miniboss.timer <= 0:
-				miniboss_phase = 'recover'
+				miniboss.phase = 'recover'
 				miniboss.timer = Tuning.MINIBOSS_SLAM_RECOVER
 		'recover':
 			# Stunned: vulnerable to attacks.
 			if miniboss.timer <= 0:
-				miniboss_phase = 'idle'
-				miniboss.timer = Tuning.MINIBOSS_IDLE_TELL
+				miniboss.phase = 'idle'
+				miniboss.timer = Tuning.MINIBOSS_IDLE_DURATION
 		'fire_tell':
 			# Brief tell before fire wave.
 			if miniboss.timer <= 0:
@@ -607,12 +625,13 @@ func _process_miniboss(delta):
 					'dir': miniboss.dir,
 					'timer': Tuning.MINIBOSS_FIRE_WAVE_DURATION,
 				})
-				miniboss_phase = 'idle'
-				miniboss.timer = Tuning.MINIBOSS_IDLE_TELL
+				miniboss.phase = 'idle'
+				miniboss.timer = Tuning.MINIBOSS_IDLE_DURATION
 				miniboss_fire_cooldown = Tuning.MINIBOSS_FIRE_WAVE_INTERVAL
+	miniboss_fire_cooldown = maxf(0, miniboss_fire_cooldown - delta)
 	miniboss['x'] = clampf(miniboss['x'], EMBER_ROOM_BOUNDS['boss']['left'], EMBER_ROOM_BOUNDS['boss']['right'])
 	# Miniboss contact damage.
-	if miniboss.hp > 0 and miniboss_phase == 'slam' and absf(miniboss['x'] - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266 and player.invulnerable <= 0 and player.dash_left <= 0:
+	if miniboss.hp > 0 and miniboss.phase == 'slam' and absf(miniboss['x'] - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266 and player.invulnerable <= 0 and player.dash_left <= 0:
 		hp -= Tuning.MINIBOSS_SLAM_DAMAGE
 		player.invulnerable = Tuning.INVULNERABLE_DURATION
 		player.velocity.y = Tuning.HIT_LAUNCH_Y
@@ -682,7 +701,7 @@ func _physics_process(delta):
 	choice_delay = maxf(0, choice_delay - delta)
 	_update_room()
 	_check_checkpoint_heal()
-	_try_shrine_interaction()
+	_try_shrine_interaction(delta)
 	if progression.pending_level_ups() > 0 and choice_delay <= 0:
 		choosing = true
 		player.active = false
@@ -690,10 +709,10 @@ func _physics_process(delta):
 		choice.show()
 		return
 	# Spawn route encounters when the room is clear.
-	if enemies.is_empty() and not route_cleared and not miniboss_spawned and skip_spawn_frames <= 0:
+	if enemies.is_empty() and not route_cleared and not miniboss_spawned:
 		encounter_wait -= delta
 		if encounter_wait <= 0:
-			spawn_wave()
+			_spawn_room_encounters()
 			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
 	# Spawn miniboss after route is cleared.
 	if not miniboss_defeated and not miniboss_spawned:
@@ -755,7 +774,7 @@ func _physics_process(delta):
 	for enemy in enemies:
 		if enemy.hp <= 0:
 			var reward = Tuning.MEDIUM_NUMEN if enemy.medium else Tuning.EASY_NUMEN
-			progression.earn('ember', reward)
+			progression.earn(Tuning.SECTION_EMBER, reward)
 			kills += 1
 			section_kills += 1
 			choice_delay = Tuning.CHOICE_DELAY
@@ -769,9 +788,7 @@ func _physics_process(delta):
 	enemies = living
 	sync_derived()
 	if hp <= 0 or player.position.y > 380:
-		skip_spawn_frames = 2
 		respawn()
-	skip_spawn_frames = maxf(0, skip_spawn_frames - 1) if skip_spawn_frames > 0 else 0
 	for particle in particles:
 		particle.time += delta
 	particles = particles.filter(func(p): return p.time < Tuning.PARTICLE_LIFETIME)
@@ -795,7 +812,7 @@ func refresh_choice_panel():
 			slot_buttons[i].text = '%d · %s' % [i + 1, String(tied[i]).capitalize()] if i < tied.size() else '—'
 	else:
 		choice_mode = 'paths'
-		var element_name = String(current.get('element', 'ember')).capitalize()
+		var element_name = String(current.get('element', Tuning.SECTION_EMBER)).capitalize()
 		var selected = progression.selections
 		choice_title.text = 'EVOLVE / %s family  (%d/%d)' % [element_name, selected + 1, Progression.SELECTION_CAP]
 		choice_detail.text = 'Choose one permanent %s upgrade with Numen (repeatable to rank 8). Play is paused.' % element_name.capitalize()
@@ -839,7 +856,7 @@ func probe_section():
 		'section_kills': section_kills,
 		'section_total': section_total,
 		'checkpoint_id': active_checkpoint_id,
-		'miniboss_phase': miniboss_phase,
+		'miniboss_phase': miniboss.get('phase', ''),
 		'miniboss_hp': miniboss.get('hp', 0) if not miniboss.is_empty() else 0,
 		'fire_waves': fire_waves.size(),
 	}
@@ -950,12 +967,12 @@ func _draw():
 		# Health bar.
 		draw_line(Vector2(bx - bw, 255 - bh), Vector2(bx - bw + 2 * bw * miniboss.hp / miniboss.max_hp, 255 - bh), Color('#c87f55'), 3)
 		# Phase indicators.
-		if miniboss_phase == 'warn_slam':
+		if miniboss.get('phase', '') == 'warn_slam':
 			draw_line(Vector2(bx, 297), Vector2(bx + miniboss.dir * 80, 297), Color('#ff4444'), 3)
 			draw_rect(Rect2(bx - 3, 255 - bh, 6, 10), Color('#ff6644'))
-		elif miniboss_phase == 'fire_tell':
+		elif miniboss.get('phase', '') == 'fire_tell':
 			draw_circle(Vector2(bx, 270 - bh), 4, Color('#ff8833'))
-		elif miniboss_phase == 'recover':
+		elif miniboss.get('phase', '') == 'recover':
 			draw_circle(Vector2(bx, 265 - bh), 3, Color('#9bbcaf'))
 		if miniboss.burn > 0:
 			draw_colored_polygon(PackedVector2Array([Vector2(bx - 6, 270 - bh), Vector2(bx, 255 - bh), Vector2(bx + 6, 270 - bh)]), Color('#ff8b35'))
