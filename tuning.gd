@@ -15,7 +15,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 625.0
+const ROOM_RIGHT_BOUND := 2350.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.85
 const HIT_LAUNCH_Y := -135.0
@@ -70,6 +70,36 @@ const WAVE_WAIT_AFTER_KILL := 1.2
 const WAVE_WAIT_AFTER_CHOICE := 0.8
 const WAVE_WAIT_INITIAL := 0.6
 const PARTICLE_LIFETIME := 0.65
+# --- Ember section (issue #24) ---
+const SECTION_EMBER := 'ember'
+# Checkpoints: entry heal and pre-miniboss heal.
+const CHECKPOINT_EMBER_ENTRY := 'ember_entry'
+const CHECKPOINT_EMBER_PREBOSS := 'ember_preboss'
+const CHECKPOINT_RETRY_RANGE := 45.0
+# Miniboss stats (provisional tuning).
+const MINIBOSS_HP := 18.0
+const MINIBOSS_APPROACH_SPEED := 35.0
+const MINIBOSS_TRIGGER_RANGE := 120.0
+const MINIBOSS_WARN_DURATION := 0.95
+const MINIBOSS_SLAM_SPEED := 260.0
+const MINIBOSS_SLAM_DURATION := 0.35
+const MINIBOSS_SLAM_RECOVER := 1.4
+const MINIBOSS_SLAM_DAMAGE := 2.0
+const MINIBOSS_FIRE_WAVE_SPEED := 110.0
+const MINIBOSS_FIRE_WAVE_DURATION := 1.8
+const MINIBOSS_FIRE_WAVE_INTERVAL := 3.5
+const MINIBOSS_FIRE_WAVE_DAMAGE := 1.0
+const MINIBOSS_FIRE_WAVE_HEIGHT := 30.0
+const MINIBOSS_IDLE_TELL := 0.6
+const MINIBOSS_IDLE_DURATION := 1.2
+const MINIBOSS_NUMEN := 5
+# Shrine awakening after miniboss defeat.
+const SHRINE_EMBER := 'ember_shrine'
+const SHRINE_AWAKEN_DURATION := 1.5
+# Section objective ID for later world assembly.
+const SECTION_OBJECTIVE_EMBER := 'objective_ember'
+# Influence-site connection points (stable IDs, not positions).
+const INFLUENCE_SLOTS := ['slot_a', 'slot_b']
 
 
 ## Swipe reach for a given Flame Arc rank (0 = no upgrade).
@@ -105,3 +135,13 @@ static func lunge_speed(medium: bool) -> float:
 
 static func recover_duration(medium: bool) -> float:
 	return MEDIUM_RECOVER_DURATION if medium else EASY_RECOVER_DURATION
+
+
+## Miniboss ground-slam cycle: warn -> slam -> recover.
+static func miniboss_slam_total() -> float:
+	return MINIBOSS_WARN_DURATION + MINIBOSS_SLAM_DURATION + MINIBOSS_SLAM_RECOVER
+
+
+## Miniboss fire-wave cycle: idle tell + wave travel.
+static func miniboss_fire_wave_total() -> float:
+	return MINIBOSS_IDLE_TELL + MINIBOSS_FIRE_WAVE_DURATION

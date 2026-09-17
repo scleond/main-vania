@@ -8,7 +8,7 @@ extends RefCounted
 const VERSION := 1
 const SAVE_PATH := 'user://numen-run-v1.json'
 const WEB_STORAGE_KEY := 'numen-run-v1'
-const EMPTY_WORLD := {'objectives': {}, 'modifier_assignments': {}}
+const EMPTY_WORLD := {'objectives': {}, 'modifier_assignments': {}, 'defeated_minibosses': [], 'awakened_shrines': []}
 
 
 class FileStorage:
