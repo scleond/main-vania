@@ -78,6 +78,7 @@ const CHECKPOINT_EMBER_ENTRY := 'ember_entry'
 const CHECKPOINT_EMBER_PREBOSS := 'ember_preboss'
 const CHECKPOINT_RETRY_RANGE := 45.0
 # Miniboss stats (provisional tuning).
+# Provisional tuning target 30-60s fight at baseline stats. SLAM_RECOVER(1.4) + IDLE(1.2) + FIRE_INTERVAL(3.5) cycles.
 const MINIBOSS_HP := 18.0
 const MINIBOSS_APPROACH_SPEED := 35.0
 const MINIBOSS_TRIGGER_RANGE := 120.0
@@ -136,13 +137,3 @@ static func lunge_speed(medium: bool) -> float:
 
 static func recover_duration(medium: bool) -> float:
 	return MEDIUM_RECOVER_DURATION if medium else EASY_RECOVER_DURATION
-
-
-## Miniboss ground-slam cycle: warn -> slam -> recover.
-static func miniboss_slam_total() -> float:
-	return MINIBOSS_WARN_DURATION + MINIBOSS_SLAM_DURATION + MINIBOSS_SLAM_RECOVER
-
-
-## Miniboss fire-wave cycle: idle tell + wave travel.
-static func miniboss_fire_wave_total() -> float:
-	return MINIBOSS_IDLE_TELL + MINIBOSS_FIRE_WAVE_DURATION

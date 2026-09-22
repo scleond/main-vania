@@ -79,7 +79,6 @@ var choice_mode = 'paths'
 var enemies = []
 var particles = []
 var wave = 0
-var wave_wait = 0.0
 var choice_delay = 0.0
 var kills = 0
 var deaths = 0
@@ -116,9 +115,6 @@ var route_cleared := false
 var miniboss_spawned := false
 var encounter_index := 0
 var encounter_wait := 0.0
-var route_enemies: Array = []
-var miniboss_hit_id := -1
-var miniboss_flash := 0.0
 var miniboss_fire_cooldown := 0.0
 var spawn_queue: Array = []
 
@@ -291,19 +287,16 @@ func respawn(count = true):
 	player.velocity = Vector2.ZERO
 	player.invulnerable = Tuning.INVULNERABLE_DURATION
 	player.attack_left = 0
+	player.attack_wait = 0.0
 	player.dash_left = 0
+	player.dash_wait = 0.0
 	particles.clear()
 	enemies.clear()
 	fire_waves.clear()
-	wave = 0
-	wave_wait = Tuning.WAVE_WAIT_INITIAL
 	encounter_index = 0
 	encounter_wait = 0.0
-	route_enemies.clear()
 	miniboss = {}
 	miniboss_spawned = false
-	miniboss_hit_id = -1
-	miniboss_flash = 0.0
 	miniboss_fire_cooldown = 0.0
 	shrine_interact = false
 	shrine_timer = 0.0
@@ -311,8 +304,6 @@ func respawn(count = true):
 	section_kills = 0
 	# Don't reset route_cleared — only new_game should reset the authored route.
 	_update_room()
-	# Ensure hp is fully restored after all state resets.
-	hp = Tuning.PLAYER_MAX_HP
 	# Delay next enemy spawn so cleared encounters stay clear briefly.
 	encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
 	note('Checkpoint restored. Numen and upgrades retained.' if count else 'Defeat the Ember creatures. Earn Numen toward evolution.')
@@ -351,10 +342,7 @@ func _init_section():
 	miniboss_spawned = false
 	encounter_index = 0
 	encounter_wait = 0.0
-	route_enemies.clear()
 	miniboss = {}
-	miniboss_hit_id = -1
-	miniboss_flash = 0.0
 	miniboss_fire_cooldown = 0.0
 	spawn_queue.clear()
 
@@ -504,7 +492,6 @@ func apply_path_choice(path_id):
 		choosing = false
 		choice.hide()
 		note('Evolved! Ranks persist through death. Keep fighting toward Fully evolved (8).')
-		wave_wait = Tuning.WAVE_WAIT_AFTER_CHOICE
 	persist_run()
 
 func _spawn_room_encounters():
@@ -560,8 +547,6 @@ func _spawn_miniboss():
 	if not route_cleared and encounter_index < EMBER_ROUTE_ENCOUNTERS.size():
 		return
 	miniboss_spawned = true
-	miniboss_hit_id = -1
-	miniboss_flash = 0.0
 	miniboss_fire_cooldown = Tuning.MINIBOSS_FIRE_WAVE_INTERVAL
 	miniboss = {
 		'x': MINIBOSS_POSITION.x,
@@ -575,7 +560,7 @@ func _spawn_miniboss():
 		'burn_tick': 0.0,
 		'flash': 0.0,
 	}
-	note('The Ember guardian awakens! Watch for ground slam and fire waves.')
+	note('The Ember miniboss awakens! Watch for ground slam and fire waves.')
 
 func _process_miniboss(delta):
 	if miniboss.is_empty() or miniboss_defeated:
@@ -663,7 +648,7 @@ func _process_miniboss(delta):
 		active_checkpoint_id = Tuning.CHECKPOINT_EMBER_PREBOSS
 		active_checkpoint_pos = CHECKPOINT_EMBER_PREBOSS_POS
 		progression.earn(Tuning.SECTION_EMBER, Tuning.MINIBOSS_NUMEN)
-		note('Ember guardian defeated! Approach the shrine to awaken it.')
+		note('Ember miniboss defeated! Approach the shrine to awaken it.')
 		persist_run()
 
 func _process_fire_waves(delta):

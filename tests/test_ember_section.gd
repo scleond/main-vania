@@ -47,7 +47,6 @@ func wait_mode(m, target, timeout):
 
 func clear_enemies(m):
 	m.enemies.clear()
-	m.route_enemies.clear()
 
 func _initialize():
 	var packed = load('res://main.tscn')
