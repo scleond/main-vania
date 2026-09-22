@@ -17,6 +17,7 @@ const LEGACY_NAMES := {'searing_claws': 'burn', 'flame_arc': 'arc'}
 const SECTION_CONNECTION := {'id': Tuning.SECTION_EMBER, 'objective': Tuning.SECTION_OBJECTIVE_EMBER, 'influence_slots': Tuning.INFLUENCE_SLOTS}
 const STORM_SECTION_CONNECTION := {'id': Tuning.SECTION_STORM, 'objective': Tuning.SECTION_OBJECTIVE_STORM, 'influence_slots': Tuning.INFLUENCE_SLOTS}
 const THORN_SECTION_CONNECTION := {'id': Tuning.SECTION_THORN, 'objective': Tuning.SECTION_OBJECTIVE_THORN, 'influence_slots': Tuning.INFLUENCE_SLOTS}
+const STONE_SECTION_CONNECTION := {'id': Tuning.SECTION_STONE, 'objective': Tuning.SECTION_OBJECTIVE_STONE, 'influence_slots': Tuning.INFLUENCE_SLOTS}
 # Authored encounter layout: ~18 easy, 2 medium across the route.
 # Each entry: {x, medium, room} — room groups enable zone-based spawning.
 const EMBER_ROUTE_ENCOUNTERS := [
@@ -86,14 +87,26 @@ const THORN_ROUTE_ENCOUNTERS := [
 	{'x': 4600, 'medium': false, 'room': 'thorn2'},
 ]
 const STONE_ROUTE_ENCOUNTERS := [
-	{'x': 4810, 'medium': false, 'room': 'stone1'},
-	{'x': 4910, 'medium': false, 'room': 'stone1'},
-	{'x': 5030, 'medium': true, 'room': 'stone1'},
-	{'x': 5160, 'medium': false, 'room': 'stone1'},
-	{'x': 5310, 'medium': false, 'room': 'stone2'},
-	{'x': 5430, 'medium': true, 'room': 'stone2'},
+	{'x': 4850, 'medium': false, 'room': 'stone1'},
+	{'x': 4900, 'medium': false, 'room': 'stone1'},
+	{'x': 4950, 'medium': false, 'room': 'stone1'},
+	{'x': 5000, 'medium': false, 'room': 'stone1'},
+	{'x': 5050, 'medium': true, 'room': 'stone1'},
+	{'x': 5090, 'medium': false, 'room': 'stone1'},
+	{'x': 5130, 'medium': false, 'room': 'stone1'},
+	{'x': 5170, 'medium': false, 'room': 'stone1'},
+	{'x': 5210, 'medium': false, 'room': 'stone1'},
+	{'x': 5290, 'medium': false, 'room': 'stone2'},
+	{'x': 5330, 'medium': false, 'room': 'stone2'},
+	{'x': 5370, 'medium': false, 'room': 'stone2'},
+	{'x': 5410, 'medium': true, 'room': 'stone2'},
+	{'x': 5450, 'medium': false, 'room': 'stone2'},
+	{'x': 5490, 'medium': false, 'room': 'stone2'},
+	{'x': 5530, 'medium': false, 'room': 'stone2'},
 	{'x': 5570, 'medium': false, 'room': 'stone2'},
-	{'x': 5700, 'medium': true, 'room': 'stone2'},
+	{'x': 5600, 'medium': false, 'room': 'stone2'},
+	{'x': 5630, 'medium': false, 'room': 'stone2'},
+	{'x': 5660, 'medium': false, 'room': 'stone2'},
 ]
 const WIND_ROUTE_ENCOUNTERS := [
 	{'x': 6050, 'medium': false, 'room': 'wind1'},
@@ -119,7 +132,8 @@ const EMBER_ROOM_BOUNDS := {
 	'thorn2': {'left': 4050.0, 'right': 4620.0},
 	'thorn_boss': {'left': 4620.0, 'right': 4750.0},
 	'stone1': {'left': 4750.0, 'right': 5250.0},
-	'stone2': {'left': 5250.0, 'right': 5950.0},
+	'stone2': {'left': 5250.0, 'right': 5800.0},
+	'stone_boss': {'left': 5800.0, 'right': 5950.0},
 	'wind1': {'left': 5950.0, 'right': 6500.0},
 	'wind2': {'left': 6500.0, 'right': 7150.0},
 }
@@ -150,6 +164,10 @@ const CHECKPOINT_THORN_ENTRY_POS := Vector2(3580, 299)
 const CHECKPOINT_THORN_PREBOSS_POS := Vector2(4625, 299)
 const THORN_MINIBOSS_POSITION := Vector2(4700, 299)
 const THORN_SHRINE_POSITION := Vector2(4735, 299)
+const CHECKPOINT_STONE_ENTRY_POS := Vector2(4770, 299)
+const CHECKPOINT_STONE_PREBOSS_POS := Vector2(5730, 299)
+const STONE_MINIBOSS_POSITION := Vector2(5870, 299)
+const STONE_SHRINE_POSITION := Vector2(5920, 299)
 var progression
 var run_store
 var saved_run: Dictionary = {}
@@ -224,6 +242,13 @@ var thorn_shrine_timer := 0.0
 var thorn_boss_spawned := false
 var thorn_patterns := 0
 var stone_encounter_index := 0
+var stone_spawned_encounters: Dictionary = {}
+var stone_route_kills := 0
+var stone_miniboss: Dictionary = {}
+var stone_miniboss_defeated := false
+var stone_shrine_awakened := false
+var stone_shrine_timer := 0.0
+var stone_boss_spawned := false
 var wind_encounter_index := 0
 var reprisal_cooldown := 0.0
 var barb_shots: Array = []
@@ -376,9 +401,9 @@ func persist_run():
 	if not playing:
 		return
 	var world_state = {
-		'defeated_minibosses': ([Tuning.SHRINE_EMBER] if miniboss_defeated else []) + ([Tuning.SHRINE_STORM] if storm_miniboss_defeated else []) + ([Tuning.SHRINE_THORN] if thorn_miniboss_defeated else []),
-		'awakened_shrines': ([Tuning.SHRINE_EMBER] if shrine_awakened else []) + ([Tuning.SHRINE_STORM] if storm_shrine_awakened else []) + ([Tuning.SHRINE_THORN] if thorn_shrine_awakened else []),
-		'objectives': {Tuning.SECTION_OBJECTIVE_EMBER: shrine_awakened, Tuning.SECTION_OBJECTIVE_STORM: storm_shrine_awakened, Tuning.SECTION_OBJECTIVE_THORN: thorn_shrine_awakened},
+		'defeated_minibosses': ([Tuning.SHRINE_EMBER] if miniboss_defeated else []) + ([Tuning.SHRINE_STORM] if storm_miniboss_defeated else []) + ([Tuning.SHRINE_THORN] if thorn_miniboss_defeated else []) + ([Tuning.SHRINE_STONE] if stone_miniboss_defeated else []),
+		'awakened_shrines': ([Tuning.SHRINE_EMBER] if shrine_awakened else []) + ([Tuning.SHRINE_STORM] if storm_shrine_awakened else []) + ([Tuning.SHRINE_THORN] if thorn_shrine_awakened else []) + ([Tuning.SHRINE_STONE] if stone_shrine_awakened else []),
+		'objectives': {Tuning.SECTION_OBJECTIVE_EMBER: shrine_awakened, Tuning.SECTION_OBJECTIVE_STORM: storm_shrine_awakened, Tuning.SECTION_OBJECTIVE_THORN: thorn_shrine_awakened, Tuning.SECTION_OBJECTIVE_STONE: stone_shrine_awakened},
 	}
 	var run = run_store.make_run(active_checkpoint_id if active_checkpoint_id != '' else CHECKPOINT_ID, progression, world_state)
 	if run_store.save_run(run):
@@ -421,6 +446,11 @@ func respawn(count = true):
 	storm_shots.clear()
 	thorn_shots.clear()
 	stone_encounter_index = 0
+	stone_spawned_encounters.clear()
+	stone_route_kills = 0
+	stone_miniboss = {}
+	stone_boss_spawned = false
+	stone_shrine_timer = 0.0
 	wind_encounter_index = 0
 	reprisal_cooldown = 0.0
 	barb_shots.clear()
@@ -460,7 +490,7 @@ func note(value):
 func can_retry_nearby():
 	var entry_dist = player.position.distance_to(CHECKPOINT_EMBER_ENTRY_POS)
 	var preboss_dist = player.position.distance_to(CHECKPOINT_EMBER_PREBOSS_POS)
-	return entry_dist <= Tuning.CHECKPOINT_RETRY_RANGE or preboss_dist <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STORM_ENTRY_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STORM_PREBOSS_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_THORN_ENTRY_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_THORN_PREBOSS_POS) <= Tuning.CHECKPOINT_RETRY_RANGE
+	return entry_dist <= Tuning.CHECKPOINT_RETRY_RANGE or preboss_dist <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STORM_ENTRY_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STORM_PREBOSS_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_THORN_ENTRY_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_THORN_PREBOSS_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STONE_ENTRY_POS) <= Tuning.CHECKPOINT_RETRY_RANGE or player.position.distance_to(CHECKPOINT_STONE_PREBOSS_POS) <= Tuning.CHECKPOINT_RETRY_RANGE
 
 func burn_rank():
 	return progression.rank_of('searing_claws')
@@ -527,6 +557,13 @@ func _init_section():
 	thorn_boss_spawned = false
 	thorn_patterns = 0
 	stone_encounter_index = 0
+	stone_spawned_encounters.clear()
+	stone_route_kills = 0
+	stone_miniboss = {}
+	stone_miniboss_defeated = false
+	stone_shrine_awakened = false
+	stone_shrine_timer = 0.0
+	stone_boss_spawned = false
 	wind_encounter_index = 0
 	reprisal_cooldown = 0.0
 	barb_shots.clear()
@@ -542,10 +579,12 @@ func _restore_section_state():
 	miniboss_defeated = defeated.has(Tuning.SHRINE_EMBER)
 	storm_miniboss_defeated = defeated.has(Tuning.SHRINE_STORM)
 	thorn_miniboss_defeated = defeated.has(Tuning.SHRINE_THORN)
+	stone_miniboss_defeated = defeated.has(Tuning.SHRINE_STONE)
 	var shrines = world.get('awakened_shrines', [])
 	shrine_awakened = shrines.has(Tuning.SHRINE_EMBER)
 	storm_shrine_awakened = shrines.has(Tuning.SHRINE_STORM)
 	thorn_shrine_awakened = shrines.has(Tuning.SHRINE_THORN)
+	stone_shrine_awakened = shrines.has(Tuning.SHRINE_STONE)
 	var objectives = world.get('objectives', {})
 	if objectives.has(Tuning.SECTION_OBJECTIVE_EMBER):
 		shrine_awakened = shrine_awakened or objectives[Tuning.SECTION_OBJECTIVE_EMBER]
@@ -553,9 +592,17 @@ func _restore_section_state():
 		storm_shrine_awakened = storm_shrine_awakened or objectives[Tuning.SECTION_OBJECTIVE_STORM]
 	if objectives.has(Tuning.SECTION_OBJECTIVE_THORN):
 		thorn_shrine_awakened = thorn_shrine_awakened or objectives[Tuning.SECTION_OBJECTIVE_THORN]
+	if objectives.has(Tuning.SECTION_OBJECTIVE_STONE):
+		stone_shrine_awakened = stone_shrine_awakened or objectives[Tuning.SECTION_OBJECTIVE_STONE]
 	# Determine checkpoint from saved position or default to entry.
 	var saved_checkpoint = saved_run.get('checkpoint_id', '')
-	if saved_checkpoint == Tuning.CHECKPOINT_THORN_PREBOSS:
+	if saved_checkpoint == Tuning.CHECKPOINT_STONE_PREBOSS:
+		active_checkpoint_id = Tuning.CHECKPOINT_STONE_PREBOSS
+		active_checkpoint_pos = CHECKPOINT_STONE_PREBOSS_POS
+	elif saved_checkpoint == Tuning.CHECKPOINT_STONE_ENTRY:
+		active_checkpoint_id = Tuning.CHECKPOINT_STONE_ENTRY
+		active_checkpoint_pos = CHECKPOINT_STONE_ENTRY_POS
+	elif saved_checkpoint == Tuning.CHECKPOINT_THORN_PREBOSS:
 		active_checkpoint_id = Tuning.CHECKPOINT_THORN_PREBOSS
 		active_checkpoint_pos = CHECKPOINT_THORN_PREBOSS_POS
 	elif saved_checkpoint == Tuning.CHECKPOINT_THORN_ENTRY:
@@ -581,7 +628,7 @@ func _update_room():
 		room = 'wind2' if px >= EMBER_ROOM_BOUNDS['wind2']['left'] else 'wind1'
 		return
 	if px >= EMBER_ROOM_BOUNDS['stone1']['left']:
-		room = 'stone2' if px >= EMBER_ROOM_BOUNDS['stone2']['left'] else 'stone1'
+		room = 'stone_boss' if px >= EMBER_ROOM_BOUNDS['stone_boss']['left'] else ('stone2' if px >= EMBER_ROOM_BOUNDS['stone2']['left'] else 'stone1')
 		return
 	if px >= EMBER_ROOM_BOUNDS['thorn1']['left']:
 		room = 'thorn_boss' if px >= EMBER_ROOM_BOUNDS['thorn_boss']['left'] else ('thorn2' if px >= EMBER_ROOM_BOUNDS['thorn2']['left'] else 'thorn1')
@@ -604,6 +651,8 @@ func _check_checkpoint_heal():
 	var at_storm_preboss = player.position.distance_to(CHECKPOINT_STORM_PREBOSS_POS) < Tuning.CHECKPOINT_RETRY_RANGE and (storm_route_kills >= STORM_ROUTE_ENCOUNTERS.size() or active_checkpoint_id == Tuning.CHECKPOINT_STORM_PREBOSS)
 	var at_thorn_entry = player.position.distance_to(CHECKPOINT_THORN_ENTRY_POS) < Tuning.CHECKPOINT_RETRY_RANGE
 	var at_thorn_preboss = player.position.distance_to(CHECKPOINT_THORN_PREBOSS_POS) < Tuning.CHECKPOINT_RETRY_RANGE and (thorn_route_kills >= THORN_ROUTE_ENCOUNTERS.size() or active_checkpoint_id == Tuning.CHECKPOINT_THORN_PREBOSS)
+	var at_stone_entry = player.position.distance_to(CHECKPOINT_STONE_ENTRY_POS) < Tuning.CHECKPOINT_RETRY_RANGE
+	var at_stone_preboss = player.position.distance_to(CHECKPOINT_STONE_PREBOSS_POS) < Tuning.CHECKPOINT_RETRY_RANGE and (stone_route_kills >= STONE_ROUTE_ENCOUNTERS.size() or active_checkpoint_id == Tuning.CHECKPOINT_STONE_PREBOSS)
 	if at_entry:
 		if active_checkpoint_id != Tuning.CHECKPOINT_EMBER_ENTRY:
 			active_checkpoint_id = Tuning.CHECKPOINT_EMBER_ENTRY
@@ -644,6 +693,18 @@ func _check_checkpoint_heal():
 			changed = true
 		if changed:
 			persist_run()
+	elif at_stone_entry or at_stone_preboss:
+		var checkpoint_id = Tuning.CHECKPOINT_STONE_PREBOSS if at_stone_preboss else Tuning.CHECKPOINT_STONE_ENTRY
+		var checkpoint_pos = CHECKPOINT_STONE_PREBOSS_POS if at_stone_preboss else CHECKPOINT_STONE_ENTRY_POS
+		var changed = active_checkpoint_id != checkpoint_id
+		active_checkpoint_id = checkpoint_id
+		active_checkpoint_pos = checkpoint_pos
+		if hp < Tuning.PLAYER_MAX_HP:
+			hp = Tuning.PLAYER_MAX_HP
+			note('Stone checkpoint reached. Health restored.')
+			changed = true
+		if changed:
+			persist_run()
 
 func _try_shrine_interaction(delta):
 	# Require explicit hold input near the shrine for 1.5s. Frame-rate-independent.
@@ -674,6 +735,14 @@ func _try_shrine_interaction(delta):
 			persist_run()
 	else:
 		thorn_shrine_timer = 0.0
+	if stone_miniboss_defeated and not stone_shrine_awakened and player.position.distance_to(STONE_SHRINE_POSITION) < Tuning.STONE_SHRINE_RANGE and Input.is_action_pressed('attack'):
+		stone_shrine_timer += delta
+		if stone_shrine_timer >= Tuning.SHRINE_AWAKEN_DURATION:
+			stone_shrine_awakened = true
+			note('Stone Shrine awakened! Section objective complete.')
+			persist_run()
+	else:
+		stone_shrine_timer = 0.0
 
 func sync_derived():
 	# Legacy probe/HUD fields derived from the rule model.
@@ -920,22 +989,76 @@ func _process_thorn_miniboss(delta: float) -> void:
 		persist_run()
 
 func _spawn_stone_encounters():
-	if not room.begins_with('stone'):
+	if room != 'stone1' and room != 'stone2':
 		return
 	var active := 0
 	for enemy in enemies:
-		if enemy.element == Tuning.SECTION_STONE:
+		if enemy.element == Tuning.SECTION_STONE and enemy.get('encounter_room', room) == room:
 			active += 1
-	while stone_encounter_index < STONE_ROUTE_ENCOUNTERS.size() and active < Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
-		var encounter = STONE_ROUTE_ENCOUNTERS[stone_encounter_index]
-		if encounter['room'] != room:
-			if room == 'stone2':
-				stone_encounter_index += 1
-				continue
+	for index in range(STONE_ROUTE_ENCOUNTERS.size()):
+		if active >= Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
 			break
+		var encounter = STONE_ROUTE_ENCOUNTERS[index]
+		if encounter['room'] != room or stone_spawned_encounters.has(index):
+			continue
 		add_enemy(encounter['x'], encounter['medium'], Tuning.SECTION_STONE)
-		stone_encounter_index += 1
+		enemies[-1]['encounter_room'] = room
+		stone_spawned_encounters[index] = true
+		stone_encounter_index = stone_spawned_encounters.size()
 		active += 1
+
+func _spawn_stone_miniboss():
+	if room != 'stone_boss' or stone_boss_spawned or stone_miniboss_defeated or (stone_route_kills < STONE_ROUTE_ENCOUNTERS.size() and active_checkpoint_id != Tuning.CHECKPOINT_STONE_PREBOSS):
+		return
+	stone_boss_spawned = true
+	stone_miniboss = {'x': STONE_MINIBOSS_POSITION.x, 'hp': Tuning.STONE_BOSS_HP, 'max_hp': Tuning.STONE_BOSS_HP, 'phase': 'idle', 'timer': Tuning.STONE_BOSS_IDLE, 'dir': -1.0, 'hit_id': -1, 'flash': 0.0}
+	note('Stone Miniboss: jump the heavy charge, then strike its exposed trailing side while stuck.')
+
+func _process_stone_miniboss(delta: float) -> void:
+	if stone_miniboss.is_empty() or stone_miniboss_defeated:
+		return
+	stone_miniboss.flash = maxf(0.0, stone_miniboss.flash - delta)
+	stone_miniboss.timer -= delta
+	match stone_miniboss.phase:
+		'idle':
+			if stone_miniboss.timer <= 0:
+				var difference: float = player.position.x - stone_miniboss.x
+				stone_miniboss.dir = signf(difference) if absf(difference) > Tuning.STONE_BOSS_WEAK_SIDE_MARGIN else stone_miniboss.dir
+				stone_miniboss.phase = 'warn_charge'
+				stone_miniboss.timer = Tuning.STONE_BOSS_WARN
+		'warn_charge':
+			if stone_miniboss.timer <= 0:
+				stone_miniboss.phase = 'charge'
+				stone_miniboss.timer = Tuning.STONE_BOSS_CHARGE_DURATION
+		'charge':
+			stone_miniboss.x = clampf(stone_miniboss.x + stone_miniboss.dir * Tuning.STONE_BOSS_CHARGE_SPEED * delta, Tuning.STONE_BOSS_LEFT, Tuning.STONE_BOSS_RIGHT)
+			if absf(player.position.x - stone_miniboss.x) < Tuning.STONE_BOSS_CONTACT_RANGE and absf(player.position.y - Tuning.STONE_BOSS_GROUND_Y) < Tuning.STONE_BOSS_HIT_HEIGHT:
+				_hurt_player(Tuning.STONE_BOSS_DAMAGE, 'Heavy Stone charge! Jump or dash through the warning.')
+			var at_wall: bool = stone_miniboss.x <= Tuning.STONE_BOSS_LEFT or stone_miniboss.x >= Tuning.STONE_BOSS_RIGHT
+			if at_wall or stone_miniboss.timer <= 0:
+				stone_miniboss.phase = 'stuck'
+				stone_miniboss.timer = Tuning.STONE_BOSS_STUCK
+		'stuck':
+			if stone_miniboss.timer <= 0:
+				stone_miniboss.phase = 'recover'
+				stone_miniboss.timer = Tuning.STONE_BOSS_RECOVER
+		'recover':
+			if stone_miniboss.timer <= 0:
+				stone_miniboss.phase = 'idle'
+				stone_miniboss.timer = Tuning.STONE_BOSS_IDLE
+	var relative: float = stone_miniboss.x - player.position.x
+	var on_weak_side: bool = (player.position.x - stone_miniboss.x) * -stone_miniboss.dir > Tuning.STONE_BOSS_WEAK_SIDE_MARGIN
+	if stone_miniboss.phase == 'stuck' and on_weak_side and Tuning.swipe_is_active(player.attack_left) and stone_miniboss.hit_id != player.attack_id and relative * player.facing > Tuning.SWIPE_BACK_ALLOW and absf(relative) < Tuning.swipe_reach(arc_rank()) + Tuning.SWIPE_HITBOX_PAD and absf(player.position.y - Tuning.STONE_BOSS_GROUND_Y) < Tuning.SWIPE_HIT_HEIGHT:
+		stone_miniboss.hit_id = player.attack_id
+		stone_miniboss.hp -= Tuning.SWIPE_DAMAGE
+		stone_miniboss.flash = Tuning.ENEMY_HIT_FLASH
+	if stone_miniboss.hp <= 0:
+		stone_miniboss_defeated = true
+		stone_miniboss = {}
+		progression.earn(Tuning.SECTION_STONE, Tuning.STONE_BOSS_NUMEN)
+		choice_delay = Tuning.CHOICE_DELAY
+		note('Stone Miniboss defeated! Activate the Shrine.')
+		persist_run()
 
 func _spawn_wind_encounters():
 	if not room.begins_with('wind'):
@@ -1371,7 +1494,7 @@ func _physics_process(delta):
 		if encounter_wait <= 0:
 			_spawn_thorn_encounters()
 			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
-	if room.begins_with('stone') and enemies.is_empty():
+	if room == 'stone1' or room == 'stone2':
 		encounter_wait -= delta
 		if encounter_wait <= 0:
 			_spawn_stone_encounters()
@@ -1386,6 +1509,7 @@ func _physics_process(delta):
 		_spawn_miniboss()
 	_spawn_storm_miniboss()
 	_spawn_thorn_miniboss()
+	_spawn_stone_miniboss()
 	# Process miniboss.
 	if not miniboss.is_empty():
 		_process_miniboss(delta)
@@ -1393,6 +1517,8 @@ func _physics_process(delta):
 		_process_storm_miniboss(delta)
 	if not thorn_miniboss.is_empty():
 		_process_thorn_miniboss(delta)
+	if not stone_miniboss.is_empty():
+		_process_stone_miniboss(delta)
 	# Process fire waves.
 	_process_fire_waves(delta)
 	_process_storm_shots(delta)
@@ -1439,7 +1565,7 @@ func _physics_process(delta):
 		elif enemy.element == Tuning.SECTION_THORN:
 			bounds = {'left': Tuning.THORN_ENEMY_MIN_X, 'right': Tuning.THORN_ENEMY_MAX_X}
 		elif enemy.element == Tuning.SECTION_STONE:
-			bounds = {'left': Tuning.STONE_ENEMY_MIN_X, 'right': Tuning.STONE_ENEMY_MAX_X}
+			bounds = EMBER_ROOM_BOUNDS.get(enemy.get('encounter_room', room), {'left': Tuning.STONE_ENEMY_MIN_X, 'right': Tuning.STONE_ENEMY_MAX_X})
 		elif enemy.element == Tuning.SECTION_WIND:
 			bounds = {'left': Tuning.WIND_ENEMY_MIN_X, 'right': Tuning.WIND_ENEMY_MAX_X}
 		enemy.x = clampf(enemy.x, bounds['left'], bounds['right'])
@@ -1475,6 +1601,8 @@ func _physics_process(delta):
 				storm_route_kills += 1
 			elif enemy.element == Tuning.SECTION_THORN:
 				thorn_route_kills += 1
+			elif enemy.element == Tuning.SECTION_STONE:
+				stone_route_kills += 1
 			choice_delay = Tuning.CHOICE_DELAY
 			# Graphical quantities: one particle per numen earned.
 			for i in range(reward):
@@ -1595,6 +1723,12 @@ func probe_section():
 		'thorn_miniboss_hp': thorn_miniboss.get('hp', 0),
 		'thorn_safe_lane': thorn_miniboss.get('safe_lane', -1),
 		'stone_encounters': stone_encounter_index,
+		'stone_route_kills': stone_route_kills,
+		'stone_miniboss_defeated': stone_miniboss_defeated,
+		'stone_shrine_awakened': stone_shrine_awakened,
+		'stone_miniboss_phase': stone_miniboss.get('phase', ''),
+		'stone_miniboss_hp': stone_miniboss.get('hp', 0),
+		'stone_weak_side': -stone_miniboss.get('dir', 0.0),
 		'wind_encounters': wind_encounter_index,
 		'reprisal_cooldown': reprisal_cooldown,
 		'barb_shots': barb_shots.size(),
@@ -1620,6 +1754,7 @@ func _process(_delta):
 			'thunderbeat_reach': Tuning.thunderbeat_reach(thunder_rank()), 'thunderbeat_damage': Tuning.thunderbeat_damage(thunder_rank()),
 			'storm_shots': storm_shots.size(), 'storm_encounters': storm_encounter_index,
 			'thorn_shots': thorn_shots.size(), 'thorn_encounters': thorn_encounter_index,
+			'stone_encounters': stone_encounter_index, 'stone_route_kills': stone_route_kills,
 			'barb_shots': barb_shots.size(), 'bramble_patches': bramble_patches.size(),
 			'dash_cooldown': Tuning.slipstream_cooldown(progression.rank_of('slipstream')), 'air_jumps_available': 1 if progression.rank_of('airborne') > 0 and not player.air_jump_used else 0, 'air_acceleration': Tuning.airborne_acceleration(progression.rank_of('airborne')),
 			'stonehide_reduction': Tuning.stonehide_reduction(stonehide_rank()), 'reprisal_damage': Tuning.reprisal_damage(reprisal_rank()), 'reprisal_radius': Tuning.reprisal_radius(reprisal_rank()), 'reprisal_cooldown': reprisal_cooldown,
@@ -1649,10 +1784,15 @@ func _draw():
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_STORM_PREBOSS_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_THORN_ENTRY_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_THORN_PREBOSS_POS + Vector2(-cam_x, 1))
+	ember_art.stamp(self, 'checkpoint', CHECKPOINT_STONE_ENTRY_POS + Vector2(-cam_x, 1))
+	ember_art.stamp(self, 'checkpoint', CHECKPOINT_STONE_PREBOSS_POS + Vector2(-cam_x, 1))
 	var shrine_art = 'shrine-awake' if shrine_awakened else ('shrine-ready' if miniboss_defeated else 'shrine-dormant')
 	ember_art.stamp(self, shrine_art, SHRINE_POSITION + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'shrine-awake' if storm_shrine_awakened else ('shrine-ready' if storm_miniboss_defeated else 'shrine-dormant'), STORM_SHRINE_POSITION + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'shrine-awake' if thorn_shrine_awakened else ('shrine-ready' if thorn_miniboss_defeated else 'shrine-dormant'), THORN_SHRINE_POSITION + Vector2(-cam_x, 1))
+	ember_art.stamp(self, 'shrine-awake' if stone_shrine_awakened else ('shrine-ready' if stone_miniboss_defeated else 'shrine-dormant'), STONE_SHRINE_POSITION + Vector2(-cam_x, 1))
+	if stone_shrine_timer > 0 and not stone_shrine_awakened:
+		draw_rect(Rect2(STONE_SHRINE_POSITION.x - 20 - cam_x, 248, 40 * stone_shrine_timer / Tuning.SHRINE_AWAKEN_DURATION, 4), Color('#c8cfbd'))
 	if thorn_shrine_timer > 0 and not thorn_shrine_awakened:
 		draw_rect(Rect2(THORN_SHRINE_POSITION.x - 20 - cam_x, 248, 40 * thorn_shrine_timer / Tuning.SHRINE_AWAKEN_DURATION, 4), Color('#92cf79'))
 	if storm_shrine_timer > 0 and not storm_shrine_awakened:
@@ -1771,6 +1911,19 @@ func _draw():
 						draw_line(Vector2(lane_x + 10 + tip * 15, 292), Vector2(lane_x + 17 + tip * 15, 254), Color('#b6df91'), 3)
 		elif thorn_miniboss.phase == 'recover':
 			draw_circle(Vector2(tx, 235), 5, Color('#d5f39b'))
+	if not stone_miniboss.is_empty():
+		var sx = stone_miniboss.x - cam_x
+		ember_art.creature(self, 'miniboss', Vector2(sx, 300), stone_miniboss.dir, stone_miniboss.phase, stone_miniboss.flash > 0, clock)
+		draw_circle(Vector2(sx, 223), 7, Color('#aeb5bd'))
+		draw_line(Vector2(sx - 28, 215), Vector2(sx - 28 + 56 * stone_miniboss.hp / stone_miniboss.max_hp, 215), Color('#c8cfbd'), 3)
+		if stone_miniboss.phase == 'warn_charge':
+			draw_line(Vector2(sx, 295), Vector2(sx + stone_miniboss.dir * (Tuning.STONE_BOSS_RIGHT - Tuning.STONE_BOSS_LEFT), 295), Color('#d9b873'), 4)
+			draw_rect(Rect2(sx - 13, 250, 26, 7), Color('#d9b873'))
+		elif stone_miniboss.phase == 'charge':
+			draw_line(Vector2(sx - stone_miniboss.dir * 24, 280), Vector2(sx - stone_miniboss.dir * 55, 280), Color('#d9b873'), 5)
+		elif stone_miniboss.phase == 'stuck':
+			draw_circle(Vector2(sx - stone_miniboss.dir * 23, 275), 9, Color('#f2d696'))
+			draw_line(Vector2(sx - stone_miniboss.dir * 12, 251), Vector2(sx - stone_miniboss.dir * 30, 239), Color('#f2d696'), 3)
 	for fw in fire_waves:
 		var fx = fw.x - cam_x
 		var fy = fw.y

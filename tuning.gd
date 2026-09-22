@@ -226,6 +226,29 @@ const STONE_MEDIUM_SWIPE_REACH := 52.0
 const STONE_EASY_DAMAGE := 1.0
 const STONE_MEDIUM_DAMAGE := 2.0
 const STONE_GUARD_FRONT_MARGIN := 0.0
+# Stone Shrine encounter: a heavy charge pins the Miniboss to the arena wall.
+# Its trailing side alone is vulnerable while stuck. All timing and collision
+# values are independent of the temporary creature drawing.
+const CHECKPOINT_STONE_ENTRY := 'stone_entry'
+const CHECKPOINT_STONE_PREBOSS := 'stone_preboss'
+const SHRINE_STONE := 'stone_shrine'
+const SECTION_OBJECTIVE_STONE := 'objective_stone'
+const STONE_BOSS_HP := 16.0
+const STONE_BOSS_IDLE := 0.55
+const STONE_BOSS_WARN := 1.15
+const STONE_BOSS_CHARGE_SPEED := 300.0
+const STONE_BOSS_CHARGE_DURATION := 0.65
+const STONE_BOSS_STUCK := 1.7
+const STONE_BOSS_RECOVER := 0.5
+const STONE_BOSS_DAMAGE := 2.0
+const STONE_BOSS_NUMEN := 5
+const STONE_BOSS_LEFT := 5800.0
+const STONE_BOSS_RIGHT := 5940.0
+const STONE_BOSS_GROUND_Y := 300.0
+const STONE_BOSS_HIT_HEIGHT := 32.0
+const STONE_BOSS_CONTACT_RANGE := 25.0
+const STONE_BOSS_WEAK_SIDE_MARGIN := 8.0
+const STONE_SHRINE_RANGE := 60.0
 # Each rank improves both paths, with hard caps below immunity and burst spam.
 const STONEHIDE_BASE_REDUCTION := 0.12
 const STONEHIDE_REDUCTION_PER_RANK := 0.06
