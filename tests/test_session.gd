@@ -351,14 +351,9 @@ func _initialize():
 	m.player.dash_id += 1
 	m._spawn_player_effects()
 	check('each available dash can leave Bramble Trail', m.bramble_patches.size() == 2, str(m.bramble_patches.size()))
-	var mechanics_before := [Tuning.swipe_reach(m.arc_rank()), Tuning.chain_damage(m.chain_rank()), Tuning.burn_duration(m.burn_rank()), mixed_dash]
-	var presentation = load('res://visual.gd').new()
-	presentation.use_alternate_presentation(true)
-	presentation.alternate_attack_playback_speed = 3.0
-	presentation.modulate.a = 0.25
-	var mechanics_after := [Tuning.swipe_reach(m.arc_rank()), Tuning.chain_damage(m.chain_rank()), Tuning.burn_duration(m.burn_rank()), Tuning.slipstream_cooldown(m.progression.rank_of('slipstream'))]
-	check('changed visual intensity, frames, and playback leave rank mechanics intact', mechanics_before == mechanics_after and presentation.modulate.a == 0.25 and presentation.swipe_boxes_alt.size() != presentation.swipe_boxes.size(), str(mechanics_after))
-	presentation.free()
+	# Actual attached-player movement/combat equivalence is replayed in
+	# tests/test_elemental_presentation.gd; a detached Visual plus tuning
+	# lookups cannot establish that boundary.
 
 	print('---')
 	print('checks: %d failures: %d' % [checks, failures])

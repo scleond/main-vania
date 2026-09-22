@@ -156,11 +156,14 @@ func _initialize():
 	check('medium worth two numen, easy one', Tuning.MEDIUM_NUMEN == 2 and Tuning.EASY_NUMEN == 1, 'rewards')
 	check('threshold ladder exact', Progression.THRESHOLDS == [8, 14, 20, 26, 30, 34, 38, 42] and Progression.SELECTION_CAP == 8, 'ladder')
 
-	# --- Presentation separation: alternate swipe set differs in frame count ---
-	var Visual = load('res://visual.gd')
-	var visual = Visual.new()
-	check('alternate swipe uses fewer frames', visual.swipe_boxes_alt.size() == 2 and visual.swipe_boxes.size() == 4, '%d/%d' % [visual.swipe_boxes_alt.size(), visual.swipe_boxes.size()])
-	visual.free()
+	# Inspect the actual consumed sequence, not legacy swipe_boxes summaries.
+	var parts = load('res://elemental_parts.gd').new()
+	var baseline := []
+	var replacement := []
+	for frame in parts.attachments.motions.swipe.size():
+		baseline.append(parts.displayed_frame('swipe', frame, false))
+		replacement.append(parts.displayed_frame('swipe', frame, true))
+	check('replacement changes actual swipe sampling', baseline != replacement, str(replacement))
 
 	print('---')
 	print('checks: %d failures: %d' % [checks, failures])

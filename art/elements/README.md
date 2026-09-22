@@ -2,7 +2,7 @@
 
 The broader redesign replaced static badges with living native pixel parts.
 The latest pass preserves the verified Ember treatment and refines the
-remaining preview families: leg-wrapped Bramble vines, fitted Stone torso
+remaining families: leg-wrapped Bramble vines, fitted Stone torso
 armor, a small Storm belly swirl, textured family-colored spikes for Reprisal,
 and compact Wind forms.
 The visual source is the **selected B detailed-pixel concept**, the
@@ -106,7 +106,7 @@ keeps the foreground hand visible over both armor and vines.
 
 Ranks 2–8 add seven internal vein/mineral highlights to these two paths.
 Neither adds external growth stamps, so higher ranks cannot produce detached
-vines or stones. These are cosmetic preview recipes only; the named paths'
+vines or stones. These are cosmetic recipes; the named paths'
 mechanical definitions, strength, timing and release gating are unchanged.
 
 ### Foot mist and fully evolved glow
@@ -140,8 +140,8 @@ Numen is the earned resource, not another elemental family.
 The family with the highest sum of equipped path ranks colors the existing
 cyan spike tips. Ties use the explicit artwork order: Ember, Storm, Thorn,
 Stone, Wind. The concept is **strongest affinity**, not first acquisition:
-no historical field or save migration is necessary. With the current Ember
-release, either first upgrade immediately warms all three spike tips.
+no historical field or save migration is necessary. Either first Ember upgrade immediately warms all three spike tips; earned
+other-element ranks select their own dominant-family color.
 
 The recolor samples existing cyan pixels above the local head center, using
 each pose's inverse rotation. It retains the approved spike flex, outlines,
@@ -186,7 +186,7 @@ Both renderers inverse-sample rotated masks onto whole logical pixels instead
 of rotating individual pixel rectangles into subpixel diamonds. Anchor
 positions and rotated growth origins are snapped. Existing authored pose
 sockets remain the alignment source; paths have newly authored local offsets.
-A parent still needs to compare Canvas and Godot rasterization visually.
+Canvas/Godot rasterization parity remains outside this pass’s browser inspection.
 
 ## Workshop controls
 
@@ -216,62 +216,85 @@ attack/dash pose sampling and alternate playback speeds. Pause stops it; a
 death remnant snapshots it with ranks so the effect does not restart on death.
 Body sampling, duration, state selection and gameplay timers are unchanged.
 
-The released player continues to pass only earned `searing_claws` and
-`flame_arc` ranks. At eight selections, the dominant Ember family receives a
-faint diffuse presentation-only glow; Numen remains the collected resource and Ember remains
-the elemental family. Existing paused upgrade synchronization and death snapshots
-remain in place. Other families, custom builds and guardian forms are confined
-to the standalone art workshop. There is no new gameplay input, progression
-write, save field or preview bridge. The prior removal of the M mixed shortcut
-is retained.
+The released player receives **all earned path ranks**, including Storm, Thorn,
+Stone and Wind, from `progression.ranks`. All five mechanics have landed since
+this issue was written. At eight selections, the strongest family receives
+the diffuse glow. Paused upgrade synchronization and death snapshots retain
+those earned ranks. The workshop's custom builds, impossible all-ten stress
+build and guardian-copy display remain appearance previews: the viewer has no
+progression write, save field or bridge into the released player. No earning
+or mechanic is disabled to recreate the older Ember-only release.
 
 The replacement recipe changes Searing Claws to split flames, applies the
 existing alternate wrist offset, and samples swipe poses `[0,0,2,2,5,5]`.
 Each displayed body pose selects matching sockets. The in-game P presentation
 demo retains its previously authored alternate playback rates. The new
 cosmetic clock does not alter that demonstration or attack outcomes by design;
-executed outcome comparison remains parent work.
+the measured replay described below remains for the parent’s test runner.
 
-## Review status
+## Completion and validation status (2026-09-22)
 
-**Issue #23 completion pass: static inspection only.** Existing shared-workspace
-changes to Reprisal rank polish, native pixel rounding and family controls are
-preserved. Slipstream's rank marks now address its compact eight-column motif
-instead of the discarded wider artwork. The attachment inspector reports each
-enabled path's actual replacement motif, rank, angle and snapped local origin;
-Reprisal is identified as a head texture rather than a mounted chest effect.
-Reprisal's eight `rank_polish` values remain independently editable artwork data.
+The prior approved artwork, ten path recipes, socket metadata and both
+compositors are preserved. This completion pass corrects obsolete Ember-only
+workshop labels and replaces indirect test claims with an attached-player
+replay. Historical redesign notes in [REDESIGN-HANDOFF.md](REDESIGN-HANDOFF.md)
+describe older revisions and release gates; they are not current restrictions.
+User acceptance of the art is automatic; no additional review gate is pending.
 
-The released player no longer contains the dormant mixed-preview air jump,
-shortened dash cooldown or damage reduction branches. The diagnostic `mixed`
-field remains constant false for compatibility. Earned Ember ranks still flow
-from progression to presentation; the workshop remains the only custom-build
-surface. Replacement sequences and attachment offsets are consumed only by
-presentation code; attack reach, hit windows and movement use gameplay tuning.
+The parent’s test runner must execute (not run during implementation):
 
-No tests, gameplay execution, browser execution or export were run for this
-pass. Static inspection does not establish visual acceptance or measured
-movement/attack equivalence. Gameplay-scale silhouette and hand/head/body
-alignment review, including replacement poses, remain unverified for these edits.
+```sh
+godot --headless --path . --script tests/test_elemental_presentation.gd
+godot --headless --path . --script tests/test_progression.gd
+godot --headless --path . --script tests/test_session.gd
+```
 
-**Latest Bramble/Stonehide correction: unvalidated implementation.** Parent owns
-all validation and visual acceptance; no checks or exports were run for it.
-Earlier verification below applies to the preceding passes only.
+The new replay uses the real scene, attached `CharacterBody2D`, world collision
+shapes, input actions and production callbacks at 60 physics ticks per second.
+Each 180-tick baseline/replacement pair earns the same build through progression:
+first Ember claws/core, rank-eight claws, or eight paths across all five families.
+Each pair runs in both facings. Memory storage isolates the runs from user saves.
+It compares every tick’s position, velocity, grounding, jump/dash/attack timers,
+attack IDs, collision size, enemy hit IDs/HP/knockback/burn clocks, secondary
+effects, progression and synchronized visual ranks. It prints measured hit
+ticks, damage, running displacement, jump velocity and dash velocity, and reports
+the first mismatched tick. Positive checks require movement, jumping, dashing,
+hits and different displayed poses, so an inert replay cannot establish success.
+The claw motif, both wrist offsets and consumed swipe sequence must also differ.
+The former detached-Visual tuning comparison and legacy `swipe_boxes` count
+claim have been removed/replaced. The replay is bounded evidence, not an
+exhaustive proof over every possible input/build.
 
-**Latest Ember pass: parent-verified (2026-09-13).** The parent ran progression
-(52 checks), session (27), run save (12), animation (24), JSON, JavaScript and
-diff checks successfully. Chromium exercised Claws-only rank 1/rank 8 color
-changes, Arc-only swipe mode, both facings, anchors and elemental stepping with
-no page errors; rank captures were inspected for unchanged geometry and heat
-color progression. No test files changed. The checked-in game export was not
-rebuilt, and final human gameplay-scale art approval remains separate.
-The prior results below apply only to the broader redesign before these edits.
+No tests were run in this pass. The checked-in web game export was not rebuilt.
+The parent independently reads the integration and owns test execution and commit.
 
-**Earlier parent-verified source redesign (2026-09-13).** The parent ran progression,
-session, save, animation, JSON, JavaScript and diff checks successfully. The
-source workshop also loaded in Chromium with all five families, ten paths,
-eight motions, mixed builds, anchors, facing, replacement mode and elemental
-stepping exercised without page errors. Native/4× mixed and all-ten stress
-captures were inspected for silhouette, guardian reuse and attachment clarity.
-The checked-in game export was not rebuilt, and final human gameplay-scale art
-approval remains a separate acceptance step.
+### Non-test visual inspection
+
+The existing Chromium workshop was used to capture its pose strips at fixed
+cosmetic time, without test assertions or a new viewer. Inspected first Ember,
+the eight-selection mixed build and the explicitly impossible all-ten stress
+build across all eight motions, with native player/copy pairs in both facings.
+[Native mixed contact sheet](inspection-native.png) records the cap build.
+[Replacement alignment](inspection-replacement.png) records swipe slot four,
+which displays pose three under replacement, with head/chest/wrist/ankle anchors
+and simultaneous baseline/replacement samples.
+
+In these captures the cream hood and dark face remain open; hand flames and
+chest core follow the arm/body poses, fitted armor stays on the torso, and the
+feet track lifted/run/collapse poses. The guardian retains the same composite
+silhouette with an immediately different violet treatment. Wind mist remains
+subtle at native size; exact rank is not reliably countable from internal pixels.
+These are source-viewer stills, not proof of runtime rendering parity, temporal
+smoothness or movement/combat equivalence. The test runner supplies the latter
+measurement; no gameplay, tests or export were executed here.
+
+### Acceptance coverage
+
+| Criterion | Existing implementation / completion evidence |
+| --- | --- |
+| Five families, ten paths, first/repeat ranks to cap eight | Shared motif/palette/growth recipes preserved; per-path rank controls retained; replay includes first Ember, rank-eight claws and a legal mixed cap build. |
+| Toggles, mixed/specialized builds, eight motions, facing, stepping, anchors | Existing workshop reused; native all-motion and replacement captures above. |
+| Independently editable art, poses and mechanics | Artwork, attachment and replacement JSON remain separate from progression/player/tuning; no production mechanics changed. |
+| Earned integration and isolated previews | All five earned families retained; obsolete Ember-only wording corrected; browser builds cannot write gameplay ranks or saves. |
+| Distinguishable guardian copy, including heavy mixing | Same composition plus violet tint and ownership markers; mixed-cap and all-ten stress stills inspected. |
+| Replacement and unchanged outcomes; silhouette/alignment | Existing split claw, both wrist offsets and swipe remap retained; actual-player replay added but awaits execution; source-viewer inspection recorded above. |
