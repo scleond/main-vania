@@ -171,6 +171,25 @@ const THORN_SHOT_RADIUS := 11.0
 const THORN_SHOT_HEIGHT := 276.0
 const THORN_FAN_COUNT := 3
 const THORN_FAN_ANGLE := 0.19
+const CHECKPOINT_THORN_ENTRY := 'thorn_entry'
+const CHECKPOINT_THORN_PREBOSS := 'thorn_preboss'
+const SHRINE_THORN := 'thorn_shrine'
+const SECTION_OBJECTIVE_THORN := 'objective_thorn'
+# Temporary thickets rise from marked lanes; one opening stays clear.
+# Baseline swipe alone can finish this provisional 30-60-second encounter.
+const THORN_BOSS_HP := 12.0
+const THORN_BOSS_IDLE := 0.5
+const THORN_BOSS_WARN := 1.1
+const THORN_BOSS_ACTIVE := 0.7
+const THORN_BOSS_RECOVER := 1.5
+const THORN_BOSS_DAMAGE := 1.0
+const THORN_BOSS_NUMEN := 5
+const THORN_BOSS_LEFT := 4620.0
+const THORN_BOSS_LANE_WIDTH := 40.0
+const THORN_BOSS_LANE_COUNT := 3
+const THORN_BOSS_GROUND_Y := 300.0
+const THORN_BOSS_HIT_HEIGHT := 48.0
+const THORN_SHRINE_RANGE := 60.0
 const BARB_SPEED := 290.0
 const BARB_LIFETIME := 0.9
 const BARB_RADIUS := 13.0
