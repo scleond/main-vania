@@ -415,8 +415,50 @@ const SANCTUARY_GROUND_Y := 300.0
 # Guardian location beneath the sanctuary; unlocked when all 5 shrines are awakened.
 const GUARDIAN_LEFT := 2100.0
 const GUARDIAN_RIGHT := 2300.0
-const GUARDIAN_GROUND_Y := 350.0
+const GUARDIAN_GROUND_Y := 300.0
 const CHECKPOINT_GUARDIAN := 'guardian_entry'
+const CHECKPOINT_SANCTUARY := 'sanctuary'
+# --- Guardian elemental phase (issue #43) ---
+# The final boss's first phase reuses the elemental ideas taught by the five
+# section minibosses: Ember ground slam, Storm lightning, Thorn brambles, Stone
+# charge, and Wind swoop. Every value below is authoritative gameplay tuning,
+# independent of guardian art, animation frame count and effect playback.
+const GUARDIAN_HP := 20.0
+const GUARDIAN_IDLE := 0.9
+const GUARDIAN_TRANSFORM_DURATION := 1.8
+const GUARDIAN_HIT_HEIGHT := 44.0
+const GUARDIAN_CONTACT_RANGE := 30.0
+const GUARDIAN_LANE_WIDTH := 66.0
+const GUARDIAN_LANE_COUNT := 3
+# Ember ground slam: warned rush toward the player's position.
+const GUARDIAN_SLAM_WARN := 1.0
+const GUARDIAN_SLAM_ACTIVE := 0.4
+const GUARDIAN_SLAM_SPEED := 300.0
+const GUARDIAN_SLAM_RECOVER := 1.5
+const GUARDIAN_SLAM_DAMAGE := 2.0
+# Storm lightning: marked lanes, one unmarked safe lane.
+const GUARDIAN_STORM_WARN := 1.15
+const GUARDIAN_STORM_ACTIVE := 0.5
+const GUARDIAN_STORM_RECOVER := 1.4
+const GUARDIAN_STORM_DAMAGE := 2.0
+# Thorn brambles: marked lanes, one clear opening.
+const GUARDIAN_THORN_WARN := 1.05
+const GUARDIAN_THORN_ACTIVE := 0.7
+const GUARDIAN_THORN_RECOVER := 1.4
+const GUARDIAN_THORN_DAMAGE := 1.5
+# Stone charge into a stuck, exposed opening.
+const GUARDIAN_STONE_WARN := 1.1
+const GUARDIAN_STONE_CHARGE_SPEED := 320.0
+const GUARDIAN_STONE_CHARGE_DURATION := 0.7
+const GUARDIAN_STONE_STUCK := 1.4
+const GUARDIAN_STONE_RECOVER := 0.6
+const GUARDIAN_STONE_DAMAGE := 2.0
+# Wind swoop that returns within baseline swipe reach.
+const GUARDIAN_WIND_WARN := 0.9
+const GUARDIAN_WIND_ACTIVE := 0.45
+const GUARDIAN_WIND_SPEED := 330.0
+const GUARDIAN_WIND_RECOVER := 1.4
+const GUARDIAN_WIND_DAMAGE := 1.5
 # Section adjacency map: each section connects to the sanctuary and its neighbors.
 const SECTION_CONNECTIONS: Dictionary = {
 	'ember': ['sanctuary', 'storm'],

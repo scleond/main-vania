@@ -197,7 +197,7 @@ const CHECKPOINT_WIND_PREBOSS_POS := Vector2(7150, 299)
 const WIND_MINIBOSS_POSITION := Vector2(7300, 270)
 const WIND_SHRINE_POSITION := Vector2(7400, 299)
 const CHECKPOINT_SANCTUARY_POS := Vector2(2200, 299)
-const CHECKPOINT_GUARDIAN_POS := Vector2(2200, 349)
+const CHECKPOINT_GUARDIAN_POS := Vector2(2060, 299)
 var progression
 var run_store
 var saved_run: Dictionary = {}
@@ -311,6 +311,11 @@ var modifier_guard_timers: Dictionary = {}  # enemy_key -> timer for stone guard
 var modifier_guard_active: Dictionary = {}  # enemy_key -> bool (guard currently up)
 var modifier_hop_timers: Dictionary = {}    # enemy_key -> timer for wind hop
 var modifier_hop_active: Dictionary = {}    # enemy_key -> bool (currently hopping)
+# --- Guardian elemental phase (issue #43) ---
+var guardian: Dictionary = {}             # active guardian encounter state
+var in_guardian_arena := false            # player is inside the arena beneath the sanctuary
+var guardian_phase_one_complete := false  # half-health transformation boundary reached
+var guardian_attack_index := 0            # next elemental attack in the cycle
 
 func label_at(text_value, at, size = 12, parent = null):
 	var label = Label.new()
@@ -335,7 +340,7 @@ func _ready():
 		run_store = RunSave.new()
 	saved_run = run_store.load_run()
 	session_only = run_store.last_error != ''
-	for action in ['left', 'right', 'jump', 'dash', 'attack', 'pause', 'retry']:
+	for action in ['left', 'right', 'jump', 'dash', 'attack', 'pause', 'retry', 'descend']:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
 	for pair in [['left', KEY_A], ['left', KEY_LEFT], ['right', KEY_D], ['right', KEY_RIGHT], ['jump', KEY_SPACE], ['dash', KEY_SHIFT], ['attack', KEY_J], ['attack', KEY_X]]:
@@ -351,6 +356,14 @@ func _ready():
 		e.button_index = pair[1]
 		InputMap.action_add_event(pair[0], e)
 	for pair in [['pause', JOY_BUTTON_START], ['retry', JOY_BUTTON_BACK]]:
+		var e = InputEventJoypadButton.new()
+		e.button_index = pair[1]
+		InputMap.action_add_event(pair[0], e)
+	for pair in [['descend', KEY_S], ['descend', KEY_DOWN]]:
+		var e = InputEventKey.new()
+		e.physical_keycode = pair[1]
+		InputMap.action_add_event(pair[0], e)
+	for pair in [['descend', JOY_BUTTON_DPAD_DOWN]]:
 		var e = InputEventJoypadButton.new()
 		e.button_index = pair[1]
 		InputMap.action_add_event(pair[0], e)
@@ -377,7 +390,7 @@ func _ready():
 	hud = label_at('', Vector2(16, 33))
 	status = label_at('', Vector2(16, 53), 11)
 	label_at('A/D or arrows move · Space jump · J/X action · Shift dash', Vector2(16, 315), 11)
-	label_at('E/K retry nearby · Esc pause · P presentation demo · N new game', Vector2(16, 332), 11)
+	label_at('E/K retry nearby · Esc pause · P presentation demo · N new game · S/↓ descend at the guardian seal', Vector2(16, 332), 11)
 	menu = Panel.new()
 	menu.position = Vector2(110, 90)
 	menu.size = Vector2(420, 165)
@@ -519,6 +532,8 @@ func respawn(count = true):
 	barb_shots.clear()
 	bramble_patches.clear()
 	secondary_cues.clear()
+	in_guardian_arena = false
+	_reset_guardian()
 	storm_encounter_index = 0
 	storm_miniboss = {}
 	storm_boss_spawned = false
@@ -660,6 +675,10 @@ func _init_section():
 	modifier_guard_active.clear()
 	modifier_hop_timers.clear()
 	modifier_hop_active.clear()
+	in_guardian_arena = false
+	guardian = {}
+	guardian_phase_one_complete = false
+	guardian_attack_index = 0
 
 func _restore_section_state():
 	# Restore persistent section state from the saved run.
@@ -725,6 +744,12 @@ func _restore_section_state():
 	elif saved_checkpoint == Tuning.CHECKPOINT_STORM_ENTRY:
 		active_checkpoint_id = Tuning.CHECKPOINT_STORM_ENTRY
 		active_checkpoint_pos = CHECKPOINT_STORM_ENTRY_POS
+	elif saved_checkpoint == Tuning.CHECKPOINT_GUARDIAN:
+		active_checkpoint_id = Tuning.CHECKPOINT_GUARDIAN
+		active_checkpoint_pos = CHECKPOINT_GUARDIAN_POS
+	elif saved_checkpoint == Tuning.CHECKPOINT_SANCTUARY:
+		active_checkpoint_id = Tuning.CHECKPOINT_SANCTUARY
+		active_checkpoint_pos = CHECKPOINT_SANCTUARY_POS
 	elif miniboss_defeated or shrine_awakened:
 		active_checkpoint_id = Tuning.CHECKPOINT_EMBER_PREBOSS
 		active_checkpoint_pos = CHECKPOINT_EMBER_PREBOSS_POS
@@ -733,6 +758,10 @@ func _restore_section_state():
 		active_checkpoint_pos = CHECKPOINT_EMBER_ENTRY_POS
 
 func _update_room():
+	# The guardian arena beneath the sanctuary is a distinct room once entered.
+	if in_guardian_arena:
+		room = 'guardian'
+		return
 	# Map player position to the current room for encounter spawning.
 	var px = player.position.x
 	if px >= EMBER_ROOM_BOUNDS['wind1']['left']:
@@ -836,27 +865,19 @@ func _check_checkpoint_heal():
 			changed = true
 		if changed:
 			persist_run()
-	# Sanctuary checkpoint (hub between Ember and Storm).
-	var at_sanctuary = player.position.distance_to(CHECKPOINT_SANCTUARY_POS) < Tuning.CHECKPOINT_RETRY_RANGE
+	# Sanctuary checkpoint (hub between Ember and Storm) is the safe point just
+	# outside the Guardian arena once all five shrines are awakened. It never
+	# heals during the encounter itself.
+	var at_sanctuary = player.position.distance_to(CHECKPOINT_SANCTUARY_POS) < Tuning.CHECKPOINT_RETRY_RANGE and not in_guardian_arena
 	if at_sanctuary:
-		var changed = active_checkpoint_id != Tuning.CHECKPOINT_GUARDIAN
-		active_checkpoint_id = Tuning.CHECKPOINT_GUARDIAN
-		active_checkpoint_pos = CHECKPOINT_SANCTUARY_POS
+		var sanctuary_id = Tuning.CHECKPOINT_GUARDIAN if guardian_unlocked else Tuning.CHECKPOINT_SANCTUARY
+		var sanctuary_pos = CHECKPOINT_GUARDIAN_POS if guardian_unlocked else CHECKPOINT_SANCTUARY_POS
+		var changed = active_checkpoint_id != sanctuary_id
+		active_checkpoint_id = sanctuary_id
+		active_checkpoint_pos = sanctuary_pos
 		if hp < Tuning.PLAYER_MAX_HP:
 			hp = Tuning.PLAYER_MAX_HP
-			note('Sanctuary reached. The Guardian stirs below.')
-			changed = true
-		if changed:
-			persist_run()
-	# Guardian checkpoint (beneath the sanctuary, unlocked after all shrines).
-	var at_guardian = player.position.distance_to(CHECKPOINT_GUARDIAN_POS) < Tuning.CHECKPOINT_RETRY_RANGE and guardian_unlocked
-	if at_guardian:
-		var changed = active_checkpoint_id != Tuning.CHECKPOINT_GUARDIAN
-		active_checkpoint_id = Tuning.CHECKPOINT_GUARDIAN
-		active_checkpoint_pos = CHECKPOINT_GUARDIAN_POS
-		if hp < Tuning.PLAYER_MAX_HP:
-			hp = Tuning.PLAYER_MAX_HP
-			note('Guardian checkpoint reached. Prepare for the encounter.')
+			note('Guardian checkpoint reached. Prepare for the encounter.' if guardian_unlocked else 'Sanctuary reached. The Guardian stirs below.')
 			changed = true
 		if changed:
 			persist_run()
@@ -1717,6 +1738,231 @@ func _process_wind_miniboss(delta: float) -> void:
 		note('Wind Miniboss defeated! Activate the Shrine.')
 		persist_run()
 
+# --- Guardian elemental phase (issue #43) ---
+# The final boss beneath the sanctuary. Its first phase is a cycle of the five
+# recognizable miniboss ideas; each attack has a warning and a recovery opening
+# where the baseline swipe can connect. At half health it enters an explicit
+# transformation transition that keeps its remaining health; the mirror phase
+# itself is completed by issue #44, so this slice stops honestly at that edge.
+
+func _guardian_center() -> float:
+	return (Tuning.GUARDIAN_LEFT + Tuning.GUARDIAN_RIGHT) * 0.5
+
+func _try_enter_guardian_arena() -> void:
+	# Access gating: the arena beneath the sanctuary opens only once all five
+	# shrines are awakened. Press descend on the sanctuary seal to drop in.
+	if not guardian_unlocked or in_guardian_arena:
+		return
+	if room != 'sanctuary':
+		return
+	if player.position.x < Tuning.GUARDIAN_LEFT or player.position.x > Tuning.GUARDIAN_RIGHT:
+		return
+	if not Input.is_action_pressed('descend'):
+		return
+	in_guardian_arena = true
+	active_checkpoint_id = Tuning.CHECKPOINT_GUARDIAN
+	active_checkpoint_pos = CHECKPOINT_GUARDIAN_POS
+	note('You descend beneath the sanctuary. The Guardian awaits.')
+	persist_run()
+
+func _leave_guardian_arena() -> void:
+	in_guardian_arena = false
+	_reset_guardian()
+	note('You step back from the Guardian arena.')
+
+func _reset_guardian() -> void:
+	guardian = {}
+	guardian_phase_one_complete = false
+	guardian_attack_index = 0
+
+func _spawn_guardian() -> void:
+	if not in_guardian_arena or not guardian_unlocked:
+		return
+	if not guardian.is_empty() or guardian_phase_one_complete:
+		return
+	guardian = {
+		'x': _guardian_center(),
+		'hp': Tuning.GUARDIAN_HP,
+		'max_hp': Tuning.GUARDIAN_HP,
+		'phase': 'idle',
+		'timer': Tuning.GUARDIAN_IDLE,
+		'dir': -1.0,
+		'attack_index': 0,
+		'safe_lane': 1,
+		'hit_id': -1,
+		'flash': 0.0,
+		'transformed': false,
+		'burn': 0.0,
+		'burn_tick': 0.0,
+		'target_x': _guardian_center(),
+	}
+	note('The Guardian awakens! It uses the five elemental attacks. Strike during recovery.')
+
+func _guardian_player_low() -> bool:
+	return absf(player.position.y - Tuning.GUARDIAN_GROUND_Y) < Tuning.GUARDIAN_HIT_HEIGHT
+
+func _guardian_contact() -> bool:
+	if not _guardian_player_low():
+		return false
+	return absf(guardian.x - player.position.x) < Tuning.GUARDIAN_CONTACT_RANGE
+
+func _guardian_lane_hit() -> bool:
+	# True when the player stands in a marked lane rather than the safe lane.
+	if not _guardian_player_low():
+		return false
+	var lane := int(floor((player.position.x - Tuning.GUARDIAN_LEFT) / Tuning.GUARDIAN_LANE_WIDTH))
+	if lane < 0 or lane >= Tuning.GUARDIAN_LANE_COUNT:
+		return false
+	return lane != int(guardian.get('safe_lane', 0))
+
+func _guardian_vulnerable() -> bool:
+	return not guardian.is_empty() and (guardian.get('phase', '') == 'recover' or guardian.get('phase', '') == 'stone_stuck')
+
+func _guardian_choose_attack() -> void:
+	var attack: int = int(guardian.get('attack_index', 0)) % 5
+	guardian.attack_index = int(guardian.get('attack_index', 0)) + 1
+	guardian.safe_lane = (int(guardian.get('safe_lane', 0)) + 1) % Tuning.GUARDIAN_LANE_COUNT
+	match attack:
+		0:
+			guardian.phase = 'ember_warn'
+			guardian.timer = Tuning.GUARDIAN_SLAM_WARN
+		1:
+			guardian.phase = 'storm_warn'
+			guardian.timer = Tuning.GUARDIAN_STORM_WARN
+		2:
+			guardian.phase = 'thorn_warn'
+			guardian.timer = Tuning.GUARDIAN_THORN_WARN
+		3:
+			guardian.phase = 'stone_warn'
+			guardian.timer = Tuning.GUARDIAN_STONE_WARN
+		4:
+			guardian.phase = 'wind_warn'
+			guardian.timer = Tuning.GUARDIAN_WIND_WARN
+
+func _guardian_begin_transform() -> void:
+	if guardian.get('transformed', false) or guardian_phase_one_complete or guardian.get('phase', '') == 'transform':
+		return
+	guardian.phase = 'transform'
+	guardian.timer = Tuning.GUARDIAN_TRANSFORM_DURATION
+	guardian.hit_id = player.attack_id
+	note('The Guardian recoils and transforms, keeping its remaining health. (Mirror phase lands in issue #44.)')
+
+func _process_guardian(delta: float) -> void:
+	if guardian.is_empty():
+		return
+	if guardian.phase == 'mirror':
+		return
+	guardian.flash = maxf(0.0, guardian.flash - delta)
+	guardian.timer -= delta
+	var px: float = player.position.x
+	var dx: float = px - guardian.x
+	match guardian.phase:
+		'idle':
+			if absf(dx) > 8.0:
+				guardian.dir = signf(dx)
+			if guardian.timer <= 0:
+				_guardian_choose_attack()
+		'ember_warn':
+			if absf(dx) > 8.0:
+				guardian.dir = signf(dx)
+			if guardian.timer <= 0:
+				guardian.phase = 'ember_slam'
+				guardian.timer = Tuning.GUARDIAN_SLAM_ACTIVE
+				guardian.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'ember_slam':
+			guardian.x = move_toward(guardian.x, guardian.target_x, Tuning.GUARDIAN_SLAM_SPEED * delta)
+			if _guardian_contact():
+				_hurt_player(Tuning.GUARDIAN_SLAM_DAMAGE, 'Ember ground slam! Leap over the rush, then strike the recovery.')
+			if guardian.timer <= 0:
+				guardian.phase = 'recover'
+				guardian.timer = Tuning.GUARDIAN_SLAM_RECOVER
+		'storm_warn':
+			if guardian.timer <= 0:
+				guardian.phase = 'storm_lightning'
+				guardian.timer = Tuning.GUARDIAN_STORM_ACTIVE
+		'storm_lightning':
+			if _guardian_lane_hit():
+				_hurt_player(Tuning.GUARDIAN_STORM_DAMAGE, 'Ground lightning! Stand in the unmarked lane.')
+			if guardian.timer <= 0:
+				guardian.phase = 'recover'
+				guardian.timer = Tuning.GUARDIAN_STORM_RECOVER
+		'thorn_warn':
+			if guardian.timer <= 0:
+				guardian.phase = 'thorn_brambles'
+				guardian.timer = Tuning.GUARDIAN_THORN_ACTIVE
+		'thorn_brambles':
+			if _guardian_lane_hit():
+				_hurt_player(Tuning.GUARDIAN_THORN_DAMAGE, 'Bramble thicket! Move through the clear opening.')
+			if guardian.timer <= 0:
+				guardian.phase = 'recover'
+				guardian.timer = Tuning.GUARDIAN_THORN_RECOVER
+		'stone_warn':
+			if absf(dx) > 4.0:
+				guardian.dir = signf(dx)
+			if guardian.timer <= 0:
+				guardian.phase = 'stone_charge'
+				guardian.timer = Tuning.GUARDIAN_STONE_CHARGE_DURATION
+				guardian.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'stone_charge':
+			guardian.x = clampf(guardian.x + guardian.dir * Tuning.GUARDIAN_STONE_CHARGE_SPEED * delta, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+			if _guardian_contact():
+				_hurt_player(Tuning.GUARDIAN_STONE_DAMAGE, 'Stone charge! Jump or dash through the warning.')
+			var at_wall: bool = guardian.x <= Tuning.GUARDIAN_LEFT or guardian.x >= Tuning.GUARDIAN_RIGHT
+			if at_wall or guardian.timer <= 0:
+				guardian.phase = 'stone_stuck'
+				guardian.timer = Tuning.GUARDIAN_STONE_STUCK
+		'stone_stuck':
+			if guardian.timer <= 0:
+				guardian.phase = 'recover'
+				guardian.timer = Tuning.GUARDIAN_STONE_RECOVER
+		'wind_warn':
+			if guardian.timer <= 0:
+				guardian.phase = 'wind_swoop'
+				guardian.timer = Tuning.GUARDIAN_WIND_ACTIVE
+				guardian.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'wind_swoop':
+			guardian.x = move_toward(guardian.x, guardian.target_x, Tuning.GUARDIAN_WIND_SPEED * delta)
+			if _guardian_contact():
+				_hurt_player(Tuning.GUARDIAN_WIND_DAMAGE, 'Wind swoop! Duck under the tell, then punish the recovery.')
+			if guardian.timer <= 0:
+				guardian.phase = 'recover'
+				guardian.timer = Tuning.GUARDIAN_WIND_RECOVER
+		'recover':
+			if guardian.timer <= 0:
+				guardian.phase = 'idle'
+				guardian.timer = Tuning.GUARDIAN_IDLE
+		'transform':
+			if guardian.timer <= 0:
+				guardian.phase = 'mirror'
+				guardian.transformed = true
+				guardian_phase_one_complete = true
+				note('The Guardian shifts into its mirror phase. This slice ends at the transformation boundary.')
+	_guardian_swipe_and_burn(delta)
+	if not guardian.get('transformed', false) and not guardian_phase_one_complete and guardian.hp <= guardian.max_hp * 0.5:
+		_guardian_begin_transform()
+
+func _guardian_swipe_and_burn(delta: float) -> void:
+	# Only recovery openings accept damage, so warnings and active attacks stay
+	# honest. Hit spacing uses attack_id exactly like every other enemy.
+	if guardian.is_empty() or guardian.phase == 'transform' or guardian.phase == 'mirror':
+		return
+	if _guardian_vulnerable():
+		var reach: float = Tuning.swipe_reach(arc_rank())
+		var relative: float = guardian.x - player.position.x
+		if Tuning.swipe_is_active(player.attack_left) and guardian.hit_id != player.attack_id and relative * player.facing > Tuning.SWIPE_BACK_ALLOW and absf(relative) < reach + Tuning.SWIPE_HITBOX_PAD and absf(player.position.y - Tuning.GUARDIAN_GROUND_Y) < Tuning.SWIPE_HIT_HEIGHT:
+			guardian.hit_id = player.attack_id
+			guardian.hp -= Tuning.SWIPE_DAMAGE
+			guardian.flash = Tuning.ENEMY_HIT_FLASH
+			if burn_rank() > 0:
+				guardian.burn = Tuning.burn_duration(burn_rank())
+	if guardian.get('burn', 0.0) > 0:
+		guardian.burn -= delta
+		guardian.burn_tick += delta
+		if guardian.burn_tick >= Tuning.BURN_TICK_INTERVAL:
+			guardian.burn_tick = 0
+			guardian.hp -= Tuning.BURN_TICK_DAMAGE
+			guardian.flash = 0.1
+
 func add_enemy(x, medium, element = Tuning.SECTION_EMBER):
 	var enemy_hp = (Tuning.STONE_MEDIUM_HP if medium else Tuning.STONE_EASY_HP) if element == Tuning.SECTION_STONE else (Tuning.MEDIUM_HP if medium else Tuning.EASY_HP)
 	enemies.append({
@@ -2115,6 +2361,9 @@ func _physics_process(delta):
 	message_left = maxf(0, message_left - delta)
 	choice_delay = maxf(0, choice_delay - delta)
 	_update_room()
+	_try_enter_guardian_arena()
+	if in_guardian_arena and (player.position.x < Tuning.GUARDIAN_LEFT - 60.0 or player.position.x > Tuning.GUARDIAN_RIGHT + 60.0):
+		_leave_guardian_arena()
 	_check_checkpoint_heal()
 	_try_shrine_interaction(delta)
 	if progression.pending_level_ups() > 0 and choice_delay <= 0:
@@ -2167,6 +2416,11 @@ func _physics_process(delta):
 		_process_stone_miniboss(delta)
 	if not wind_miniboss.is_empty():
 		_process_wind_miniboss(delta)
+	# Process the guardian elemental phase when the player is in its arena.
+	if in_guardian_arena and guardian_unlocked:
+		_spawn_guardian()
+		if not guardian.is_empty():
+			_process_guardian(delta)
 	# Process fire waves.
 	_process_fire_waves(delta)
 	_process_storm_shots(delta)
@@ -2348,6 +2602,10 @@ func refresh():
 		hud.text += '   |   Section complete'
 	if guardian_unlocked:
 		hud.text += '   |   Guardian unlocked'
+	if not guardian.is_empty():
+		hud.text += '   |   Guardian %.0f/%.0f (%s)' % [guardian.hp, guardian.max_hp, guardian.phase]
+	if guardian_phase_one_complete:
+		hud.text += '   |   Guardian transformed (mirror phase next)'
 	if empowered_sections.size() > 0:
 		hud.text += '   |   Empowered: %s' % '/'.join(empowered_sections)
 	if active_influence_sites.size() > 0:
@@ -2417,6 +2675,16 @@ func probe_section():
 		'bramble_patches': bramble_patches.size(),
 		'active_influence_sites': active_influence_sites.duplicate(),
 		'guardian_unlocked': guardian_unlocked,
+		'in_guardian_arena': in_guardian_arena,
+		'guardian_active': not guardian.is_empty(),
+		'guardian_phase': guardian.get('phase', ''),
+		'guardian_hp': guardian.get('hp', 0.0),
+		'guardian_max_hp': guardian.get('max_hp', 0.0),
+		'guardian_transformed': guardian.get('transformed', false),
+		'guardian_phase_one_complete': guardian_phase_one_complete,
+		'guardian_attack_index': guardian.get('attack_index', 0),
+		'guardian_safe_lane': guardian.get('safe_lane', -1),
+		'guardian_vulnerable': _guardian_vulnerable(),
 		'shrine_pulses': shrine_pulses.size(),
 		'empowered_sections': empowered_sections.duplicate(),
 		'modifier_count': modifier_assignments.size(),
@@ -2448,13 +2716,16 @@ func _process(_delta):
 			'stonehide_reduction': Tuning.stonehide_reduction(stonehide_rank()), 'reprisal_damage': Tuning.reprisal_damage(reprisal_rank()), 'reprisal_radius': Tuning.reprisal_radius(reprisal_rank()), 'reprisal_cooldown': reprisal_cooldown,
 			'wave': wave, 'kills': kills, 'deaths': deaths, 'retries': retries,
 			'checkpoint_id': active_checkpoint_id if active_checkpoint_id != '' else CHECKPOINT_ID, 'has_saved_run': not saved_run.is_empty(), 'session_only': session_only,
+			'guardian_unlocked': guardian_unlocked, 'in_guardian_arena': in_guardian_arena,
+			'guardian_phase': guardian.get('phase', ''), 'guardian_hp': guardian.get('hp', 0.0), 'guardian_max_hp': guardian.get('max_hp', 0.0),
+			'guardian_phase_one_complete': guardian_phase_one_complete,
 			'x': player.position.x, 'y': player.position.y, 'vx': player.velocity.x, 'vy': player.velocity.y, 'dash_wait': player.dash_wait,
 			'attack': player.attack_id, 'attack_active': player.attack_left > 0,
 			'attack_remaining': player.attack_left,
 			'enemies': probe_enemies(),
 			'section': probe_section(),
 			'presentation': 'alternate' if player.visual.alternate_presentation else 'default',
-			'actions': {'move': 'left/right', 'jump': 'jump', 'dash': 'dash', 'pause': 'pause', 'retry': 'retry'},
+			'actions': {'move': 'left/right', 'jump': 'jump', 'dash': 'dash', 'pause': 'pause', 'retry': 'retry', 'descend': 'descend'},
 		}))
 	queue_redraw()
 
@@ -2728,8 +2999,58 @@ func _draw():
 			_: color = Color('#ffffff', alpha * 0.3)
 		var center_x: float = Tuning.SANCTUARY_LEFT + (Tuning.SANCTUARY_RIGHT - Tuning.SANCTUARY_LEFT) * 0.5 - cam_x
 		draw_arc(Vector2(center_x, 300), pulse_radius, PI, TAU, 48, color, 3)
-	# Draw guardian indicator when unlocked.
+	# Draw the guardian arena seal and the active guardian when unlocked.
 	if guardian_unlocked:
-		var gx: float = (Tuning.GUARDIAN_LEFT + Tuning.GUARDIAN_RIGHT) * 0.5 - cam_x
+		var gx: float = _guardian_center() - cam_x
 		var gy: float = Tuning.GUARDIAN_GROUND_Y
-		draw_arc(Vector2(gx, gy), 20.0 + sin(clock * 3.0) * 3.0, PI, TAU, 16, Color('#ff4444', 0.6), 2)
+		draw_arc(Vector2(gx, gy - 14), 22.0 + sin(clock * 3.0) * 3.0, PI, TAU, 18, Color('#c59bff', 0.7), 2)
+		if not in_guardian_arena:
+			draw_line(Vector2(gx, gy - 42), Vector2(gx, gy - 12), Color('#c59bff', 0.6), 2)
+	if not guardian.is_empty():
+		_draw_guardian(cam_x)
+
+func _guardian_element_color(phase: String) -> Color:
+	match phase:
+		'ember_warn', 'ember_slam':
+			return Color('#ff6633')
+		'storm_warn', 'storm_lightning':
+			return Color('#8bd7f7')
+		'thorn_warn', 'thorn_brambles':
+			return Color('#92cf79')
+		'stone_warn', 'stone_charge', 'stone_stuck':
+			return Color('#aeb5bd')
+		'wind_warn', 'wind_swoop':
+			return Color('#a5e5cf')
+		'transform', 'mirror':
+			return Color('#c59bff')
+	return Color('#c87f55')
+
+func _draw_guardian(cam_x: float) -> void:
+	# Temporary guardian art: readable elemental telegraphs over a plain body.
+	var gx: float = guardian.x - cam_x
+	var gy: float = Tuning.GUARDIAN_GROUND_Y
+	var color: Color = _guardian_element_color(guardian.phase)
+	if guardian.phase == 'storm_warn' or guardian.phase == 'storm_lightning' or guardian.phase == 'thorn_warn' or guardian.phase == 'thorn_brambles':
+		var warning: bool = guardian.phase.ends_with('warn')
+		for lane in range(Tuning.GUARDIAN_LANE_COUNT):
+			var lane_x: float = Tuning.GUARDIAN_LEFT + lane * Tuning.GUARDIAN_LANE_WIDTH - cam_x
+			if lane == int(guardian.safe_lane):
+				draw_rect(Rect2(lane_x + 4, gy - 8, Tuning.GUARDIAN_LANE_WIDTH - 8, 4), Color('#d5f39b'))
+				continue
+			var lane_color: Color = Color(color.r, color.g, color.b, 0.35) if warning else color
+			draw_rect(Rect2(lane_x, gy - 10, Tuning.GUARDIAN_LANE_WIDTH, 6), lane_color)
+			if not warning:
+				for tip in range(3):
+					draw_line(Vector2(lane_x + 10 + tip * 18, gy - 10), Vector2(lane_x + 18 + tip * 18, gy - 46), color, 3)
+	var body_color: Color = Color('#c59bff') if guardian.phase == 'transform' or guardian.phase == 'mirror' else color
+	draw_rect(Rect2(gx - 22, gy - 52, 44, 52), body_color.darkened(0.35))
+	draw_rect(Rect2(gx - 15, gy - 62, 30, 24), body_color)
+	if guardian.flash > 0:
+		draw_rect(Rect2(gx - 22, gy - 62, 44, 62), Color(1, 1, 1, 0.6))
+	if guardian.phase == 'transform':
+		draw_arc(Vector2(gx, gy - 30), 34.0 + sin(clock * 12.0) * 5.0, 0, TAU, 24, Color('#c59bff'), 3)
+	elif guardian.phase == 'mirror':
+		draw_arc(Vector2(gx, gy - 30), 34.0, 0, TAU, 24, Color('#c59bff', 0.7), 2)
+	draw_line(Vector2(gx - 30, gy - 74), Vector2(gx - 30 + 60 * guardian.hp / guardian.max_hp, gy - 74), body_color, 4)
+	if _guardian_vulnerable():
+		draw_circle(Vector2(gx, gy - 68), 4, Color('#d5f39b'))
