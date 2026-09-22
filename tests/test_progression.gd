@@ -105,7 +105,31 @@ func _initialize():
 	check('offer none at cap', p.offer()['kind'] == 'none', str(p.offer()))
 	check('select rejected at cap', not p.select_path('searing_claws'), 'allowed over cap')
 
-	# --- Catalog: extensible, ten paths, session gates to Ember ---
+	# --- Every live Element offers both paths at every pre-cap rank ---
+	for element in Progression.PLAYABLE_ELEMENTS:
+		for selected_path in p.paths_of(element):
+			var route = fresh()
+			var route_ok := true
+			for threshold in Progression.THRESHOLDS:
+				route.earn(element, int(threshold) - route.lifetime)
+				var paths: Array = route.session_offer().get('paths', [])
+				route_ok = route_ok and paths.size() == 2 and paths.has(selected_path)
+				for other_path in route.paths_of(element):
+					route_ok = route_ok and paths.has(other_path)
+				route_ok = route_ok and route.select_path(selected_path)
+			check('%s repeats to rank eight with both choices open' % selected_path, route_ok and route.rank_of(selected_path) == 8 and route.is_fully_evolved(), str(route.ranks))
+
+	# Mixed rewards past a threshold stay typed in the next earning window.
+	p = fresh()
+	p.earn('ember', 6)
+	p.earn('storm', 4)
+	check('mixed overflow starts with Ember leader', p.offer().get('element') == 'ember', str(p.offer()))
+	check('mixed overflow selects Ember path', p.select_path('searing_claws'))
+	check('typed Storm overflow survives', p.window_counts()['storm'] == 2 and p.window_counts()['ember'] == 0, str(p.window_counts()))
+	p.earn('storm', 4)
+	check('overflow leads next Storm choice', p.session_offer().get('element') == 'storm' and p.session_offer().get('paths', []).size() == 2, str(p.session_offer()))
+
+	# --- Catalog: all ten paths are playable ---
 	check('catalog holds ten paths', Progression.PATH_CATALOG.size() == 10, str(Progression.PATH_CATALOG.size()))
 	var elements_seen := {}
 	for path_id in Progression.PATH_CATALOG:

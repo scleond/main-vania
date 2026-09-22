@@ -108,6 +108,29 @@ func _initialize():
 	mixed_reloaded.continue_run()
 	check('Continue retains mixed Ember and Storm paths', mixed_reloaded.burn_rank() == 1 and mixed_reloaded.chain_rank() == 1 and mixed_reloaded.thunder_rank() == 1 and mixed_reloaded.progression.selections == 3, str(mixed_reloaded.progression.ranks))
 
+	# A full mixed build keeps every rank, the typed remainder, and its cap
+	# through both checkpoint death and a fresh Continue scene.
+	mixed_reloaded.new_game()
+	var build_paths := ['searing_claws', 'chain_spark', 'barb_shot', 'stonehide', 'slipstream', 'flame_arc', 'thunderbeat', 'bramble_trail']
+	var build_elements := ['ember', 'storm', 'thorn', 'stone', 'wind', 'ember', 'storm', 'thorn']
+	for i in range(build_paths.size()):
+		var reward: int = mixed_reloaded.progression.window_requirement() + (2 if i == build_paths.size() - 1 else 0)
+		mixed_reloaded.progression.earn(build_elements[i], reward)
+		mixed_reloaded.apply_path_choice(build_paths[i])
+	var expected_ranks: Dictionary = mixed_reloaded.progression.ranks.duplicate()
+	var capped_window: Dictionary = mixed_reloaded.progression.window_counts()
+	mixed_reloaded.respawn()
+	check('death keeps all mixed ranks and typed cap remainder', mixed_reloaded.progression.ranks == expected_ranks and mixed_reloaded.progression.window_counts() == capped_window and mixed_reloaded.progression.is_fully_evolved(), str(mixed_reloaded.progression.ranks))
+	var capped = make_scene(storage)
+	capped.continue_run()
+	var restored_ranks_match: bool = capped.progression.ranks.size() == expected_ranks.size()
+	for path_id in expected_ranks:
+		restored_ranks_match = restored_ranks_match and capped.progression.rank_of(path_id) == int(expected_ranks[path_id])
+	check('Continue keeps all mixed ranks and typed cap remainder', restored_ranks_match and capped.progression.window_counts() == capped_window and capped.progression.is_fully_evolved(), str(capped.progression.ranks))
+	var lifetime_at_cap: int = capped.progression.lifetime
+	capped.progression.earn('stone', 7)
+	check('Fully evolved stops accumulation after Continue', capped.progression.lifetime == lifetime_at_cap and capped.progression.window_counts() == capped_window and capped.progression.offer()['kind'] == 'none')
+
 	var unavailable = MemoryStorage.new()
 	unavailable.available = false
 	var fallback = make_scene(unavailable)
@@ -122,6 +145,7 @@ func _initialize():
 	tied_reloaded.free()
 	mixed.free()
 	mixed_reloaded.free()
+	capped.free()
 	fallback.free()
 
 	print('---')

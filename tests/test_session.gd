@@ -309,6 +309,57 @@ func _initialize():
 	m.continue_run()
 	check('Stone mixed build survives Continue', m.burn_rank() == 1 and m.stonehide_rank() == 1 and m.reprisal_rank() == 1, str(m.progression.ranks))
 
+	# --- Dense earned build: bounded secondary hits and approved synergies ---
+	m.start_run()
+	m.enemies.clear()
+	m.player.position = Vector2(70, 299)
+	var mixed_paths := ['searing_claws', 'chain_spark', 'barb_shot', 'reprisal', 'bramble_trail', 'slipstream', 'thunderbeat', 'flame_arc']
+	var mixed_elements := ['ember', 'storm', 'thorn', 'stone', 'thorn', 'wind', 'storm', 'ember']
+	for i in range(mixed_paths.size()):
+		m.progression.earn(mixed_elements[i], m.progression.window_requirement())
+		var offer = m.progression.session_offer()
+		check('earned mixed offer for ' + mixed_paths[i], offer.get('paths', []).has(mixed_paths[i]), str(offer))
+		m.apply_path_choice(mixed_paths[i])
+	check('eight distinct earned paths coexist at cap', m.progression.is_fully_evolved() and m.progression.ranks.size() == 8, str(m.progression.ranks))
+	for x in [120.0, 140.0, 160.0, 180.0, 200.0]:
+		m.add_enemy(x, true, 'thorn')
+	var chained = m.enemies[1]
+	m._chain_from(m.enemies[0])
+	check('Chain Spark carries owned burn', chained.burn == Tuning.burn_duration(m.burn_rank()), str(chained.burn))
+	check('dense Chain Spark stops at one secondary target', m.secondary_cues.size() == 1 and m.enemies[2].hp == Tuning.MEDIUM_HP, str(m.probe_enemies()))
+	m.player.attack_id += 1
+	m._spawn_player_effects()
+	m._process_player_effects(0.05)
+	check('Barb Shot carries owned burn', m.enemies[0].burn == Tuning.burn_duration(m.burn_rank()), str(m.enemies[0].burn))
+	check('Barb Shot makes no projectile or chain on impact', m.barb_shots.size() == 1 and m.secondary_cues.size() == 1, '%d/%d' % [m.barb_shots.size(), m.secondary_cues.size()])
+	var hp_after_barb: float = m.enemies[0].hp
+	m._process_player_effects(0.01)
+	check('one Barb Shot cannot hit the same enemy twice', m.enemies[0].hp == hp_after_barb, str(m.enemies[0].hp))
+	m.player.position.x = 125.0
+	m.player.invulnerable = 0.0
+	m.reprisal_cooldown = 0.0
+	var retaliation_before: float = m.enemies[0].hp
+	m._hurt_player(1.0, 'Mixed retaliation check')
+	check('Reprisal deals one bounded hit and does not reflect', is_equal_approx(m.enemies[0].hp, retaliation_before - Tuning.reprisal_damage(1)) and m.reprisal_cooldown > 0.0 and m.barb_shots.size() == 1 and m.secondary_cues.size() == 2, str(m.probe_enemies()))
+	check('Reprisal does not inherit burn', m.enemies[2].burn == 0.0, str(m.enemies[2].burn))
+	var baseline_dash: float = Tuning.slipstream_cooldown(0)
+	var mixed_dash: float = Tuning.slipstream_cooldown(m.progression.rank_of('slipstream'))
+	check('Slipstream allows more Bramble dashes per interval', mixed_dash < baseline_dash and floori(1.1 / mixed_dash) > floori(1.1 / baseline_dash), '%s/%s' % [mixed_dash, baseline_dash])
+	m.bramble_patches.clear()
+	m.player.dash_id += 1
+	m._spawn_player_effects()
+	m.player.dash_id += 1
+	m._spawn_player_effects()
+	check('each available dash can leave Bramble Trail', m.bramble_patches.size() == 2, str(m.bramble_patches.size()))
+	var mechanics_before := [Tuning.swipe_reach(m.arc_rank()), Tuning.chain_damage(m.chain_rank()), Tuning.burn_duration(m.burn_rank()), mixed_dash]
+	var presentation = load('res://visual.gd').new()
+	presentation.use_alternate_presentation(true)
+	presentation.alternate_attack_playback_speed = 3.0
+	presentation.modulate.a = 0.25
+	var mechanics_after := [Tuning.swipe_reach(m.arc_rank()), Tuning.chain_damage(m.chain_rank()), Tuning.burn_duration(m.burn_rank()), Tuning.slipstream_cooldown(m.progression.rank_of('slipstream'))]
+	check('changed visual intensity, frames, and playback leave rank mechanics intact', mechanics_before == mechanics_after and presentation.modulate.a == 0.25 and presentation.swipe_boxes_alt.size() != presentation.swipe_boxes.size(), str(mechanics_after))
+	presentation.free()
+
 	print('---')
 	print('checks: %d failures: %d' % [checks, failures])
 	if failures > 0:

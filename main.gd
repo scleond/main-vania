@@ -1041,7 +1041,7 @@ func _process_player_effects(delta: float) -> void:
 			continue
 		for enemy in enemies:
 			if enemy.hp > 0 and not shot.hits.has(enemy) and absf(enemy.x - shot.position.x) <= Tuning.BARB_RADIUS:
-				_secondary_damage(enemy, Tuning.barb_damage(barb_rank()), enemy.x - shot.direction * Tuning.BARB_RADIUS)
+				_secondary_damage(enemy, Tuning.barb_damage(barb_rank()), enemy.x - shot.direction * Tuning.BARB_RADIUS, true)
 				shot.hits.append(enemy)
 		living_barbs.append(shot)
 	barb_shots = living_barbs
@@ -1057,12 +1057,15 @@ func _process_player_effects(delta: float) -> void:
 		living_patches.append(patch)
 	bramble_patches = living_patches
 
-func _secondary_damage(enemy: Dictionary, amount: float, source_x: float) -> void:
-	# Deliberately bypass swipe-hit handling: secondary effects cannot chain or ignite.
+func _secondary_damage(enemy: Dictionary, amount: float, source_x: float, carries_claws: bool = false) -> void:
+	# Secondary hits never enter swipe handling. Only Chain Spark and Barb Shot
+	# inherit owned Searing Claws; burn ticks and other effects cannot proc more hits.
 	if _stone_guard_blocks(enemy, source_x):
 		return
 	enemy.hp -= amount
 	enemy.flash = Tuning.ENEMY_HIT_FLASH
+	if carries_claws and burn_rank() > 0:
+		enemy.burn = Tuning.burn_duration(burn_rank())
 
 func _chain_from(source: Dictionary) -> void:
 	if chain_rank() <= 0:
@@ -1077,7 +1080,7 @@ func _chain_from(source: Dictionary) -> void:
 			nearest = target
 			distance = gap
 	if not nearest.is_empty():
-		_secondary_damage(nearest, Tuning.chain_damage(chain_rank()), source.x)
+		_secondary_damage(nearest, Tuning.chain_damage(chain_rank()), source.x, true)
 		secondary_cues.append({'from': source.x, 'to': nearest.x, 'timer': Tuning.SECONDARY_CUE_DURATION, 'pulse': false})
 
 func _pulse_if_due() -> void:
@@ -1292,7 +1295,7 @@ func refresh():
 	var leaders = progression.dominant_elements()
 	var leader_text = 'none' if leaders.is_empty() else '/'.join(leaders)
 	if progression.is_fully_evolved():
-		hud.text = 'Health %.1f / %d   |   Fully evolved / Ember aura %d/%d   |   Claws r%d · Arc r%d' % [hp, int(Tuning.PLAYER_MAX_HP), progression.selections, Progression.SELECTION_CAP, burn_rank(), arc_rank()]
+		hud.text = 'Health %.1f / %d   |   Fully evolved %d/%d   |   Claws r%d · Arc r%d' % [hp, int(Tuning.PLAYER_MAX_HP), progression.selections, Progression.SELECTION_CAP, burn_rank(), arc_rank()]
 	elif requirement > 0:
 		hud.text = 'Health %.1f / %d   |   Numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	else:
@@ -1310,7 +1313,7 @@ func refresh():
 		hud.text += '   |   Section complete'
 	if choosing:
 		refresh_choice_panel()
-		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d Numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved — Ember aura active; Numen no longer accumulates' % wave)
+		status.text = message if message_left > 0 else ('Wave %d  |  Leading %s  |  Next %d Numen' % [wave, leader_text, requirement] if not progression.is_fully_evolved() else 'Wave %d  |  Fully evolved; Numen no longer accumulates' % wave)
 
 func probe_enemies():
 	var out = []
