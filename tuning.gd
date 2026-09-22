@@ -19,7 +19,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 7110.0
+const ROOM_RIGHT_BOUND := 7450.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.95
 const HIT_LAUNCH_Y := -135.0
@@ -271,7 +271,7 @@ const AIRBORNE_AIR_STOPPING_PER_RANK := 65.0
 const AIRBORNE_CONTROL_CAP := 1350.0
 const SECTION_WIND := 'wind'
 const WIND_ENEMY_MIN_X := 6000.0
-const WIND_ENEMY_MAX_X := 7110.0
+const WIND_ENEMY_MAX_X := 7160.0
 const WIND_EASY_HOVER_HEIGHT := 282.0
 const WIND_MEDIUM_CIRCLE_HEIGHT := 252.0
 const WIND_ATTACK_HEIGHT := 283.0
@@ -293,6 +293,37 @@ const WIND_RETURN_SPEED := 110.0
 const WIND_CIRCLE_RADIUS := 82.0
 const WIND_CIRCLE_SPEED := 2.2
 const WIND_SWIPE_VERTICAL_REACH := 47.0
+const CHECKPOINT_WIND_ENTRY := 'wind_entry'
+const CHECKPOINT_WIND_PREBOSS := 'wind_preboss'
+const SHRINE_WIND := 'wind_shrine'
+const SECTION_OBJECTIVE_WIND := 'objective_wind'
+const WIND_SHRINE_RANGE := 60.0
+# Wind Miniboss combat is tuned independently from temporary presentation.
+const WIND_BOSS_HP := 12.0
+const WIND_BOSS_NUMEN := 5
+const WIND_BOSS_IDLE := 0.45
+const WIND_BOSS_SWOOP_WARN := 0.85
+const WIND_BOSS_GUST_WARN := 1.1
+const WIND_BOSS_SWOOP_ACTIVE := 0.42
+const WIND_BOSS_GUST_ACTIVE := 0.65
+const WIND_BOSS_SWOOP_RECOVER := 1.35
+const WIND_BOSS_GUST_RECOVER := 1.55
+const WIND_BOSS_SWOOP_SPEED := 330.0
+const WIND_BOSS_DROP_SPEED := 140.0
+const WIND_BOSS_SWOOP_DAMAGE := 1.0
+const WIND_BOSS_GUST_DAMAGE := 1.0
+const WIND_BOSS_GUST_FORCE := 260.0
+const WIND_BOSS_GUST_RANGE := 150.0
+const WIND_BOSS_GUST_HEIGHT := 55.0
+const WIND_BOSS_GROUND_Y := 300.0
+const WIND_BOSS_CONTACT_RANGE := 27.0
+const WIND_BOSS_CONTACT_HEIGHT := 29.0
+const WIND_BOSS_SWOOP_HEIGHT := 280.0
+const WIND_BOSS_RECOVERY_HEIGHT := 286.0
+const WIND_BOSS_RECOVERY_OFFSET := 35.0
+const WIND_BOSS_FACE_MARGIN := 8.0
+const WIND_BOSS_LEFT := 7200.0
+const WIND_BOSS_RIGHT := 7390.0
 
 static func slipstream_cooldown(rank: int) -> float:
 	return maxf(SLIPSTREAM_MIN_COOLDOWN, DASH_COOLDOWN - SLIPSTREAM_REDUCTION_PER_RANK * float(maxi(rank, 0)))
@@ -357,7 +388,7 @@ static func burn_duration(burn_rank: int) -> float:
 
 ## True while the remaining swipe time sits inside the damage window.
 static func swipe_is_active(attack_left: float) -> bool:
-	return attack_left < SWIPE_ACTIVE_LATE and attack_left > SWIPE_ACTIVE_EARLY
+	return attack_left <= SWIPE_ACTIVE_LATE and attack_left > SWIPE_ACTIVE_EARLY
 
 
 static func warn_duration(medium: bool) -> float:
