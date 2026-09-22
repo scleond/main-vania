@@ -1,0 +1,55 @@
+{
+  "environment": {
+    "arch_spacing": 192,
+    "furnaces": [
+      320,
+      790,
+      1140,
+      1550,
+      2010
+    ],
+    "decorations": [
+      {
+        "asset": "bell",
+        "x": 530,
+        "y": 138
+      },
+      {
+        "asset": "effigy",
+        "x": 1270,
+        "y": 300
+      },
+      {
+        "asset": "censer",
+        "x": 2110,
+        "y": 154
+      }
+    ]
+  },
+  "creatures": {
+    "easy": {
+      "size": [
+        26,
+        30
+      ]
+    },
+    "medium": {
+      "size": [
+        38,
+        39
+      ]
+    },
+    "miniboss": {
+      "size": [
+        56,
+        55
+      ]
+    }
+  },
+  "palette": {
+    "stone": "#343844",
+    "edge": "#92918b",
+    "joint": "#1b2430",
+    "crack": "#ad684b"
+  }
+}

@@ -8,6 +8,7 @@ extends Node2D
 const Tuning = preload('res://tuning.gd')
 const Progression = preload('res://progression.gd')
 const RunSave = preload('res://run_save.gd')
+var ember_art = preload('res://ember_art.gd').new()
 const CHECKPOINT_POSITION = Vector2(70, 299)
 const CHECKPOINT_ID := 'ember_trial_entry'
 const PATH_IDS := ['searing_claws', 'flame_arc']
@@ -880,40 +881,11 @@ func _notification(what):
 func _draw():
 	# Camera: offset drawing based on player position for scrolling.
 	var cam_x = clampf(player.position.x - 320, 0, 2400 - 640)
-	# Draw background pillars (tiled across the full width).
-	for i in range(28):
-		draw_rect(Rect2(i * 90 + 15 - cam_x, 125 + (i % 3) * 12, 32, 175), Color('#172637'))
-		draw_rect(Rect2(i * 90 + 24 - cam_x, 156, 8, 28), Color('#46352c'))
-	# Draw platforms.
-	for rect in platforms:
-		var dr = Rect2(rect.position.x - cam_x, rect.position.y, rect.size.x, rect.size.y)
-		draw_rect(dr, Color('#354340'))
-		draw_rect(Rect2(dr.position, Vector2(dr.size.x, 3)), Color('#8a9c73'))
-	# Draw room dividers (subtle vertical lines).
-	for r in EMBER_ROOM_BOUNDS:
-		if r != 'entry':
-			var bx = EMBER_ROOM_BOUNDS[r]['left'] - cam_x
-			draw_line(Vector2(bx, 120), Vector2(bx, 300), Color('#2a3a44'), 1)
-	# Draw entry checkpoint.
-	draw_rect(Rect2(CHECKPOINT_EMBER_ENTRY_POS.x - 8 - cam_x, 273, 16, 27), Color('#537f83'))
-	draw_circle(CHECKPOINT_EMBER_ENTRY_POS + Vector2(-cam_x, -30), 5, Color('#a6f4d7'))
-	# Draw pre-boss checkpoint.
-	draw_rect(Rect2(CHECKPOINT_EMBER_PREBOSS_POS.x - 8 - cam_x, 273, 16, 27), Color('#537f83'))
-	draw_circle(CHECKPOINT_EMBER_PREBOSS_POS + Vector2(-cam_x, -30), 5, Color('#a6f4d7'))
-	# Draw shrine.
-	if miniboss_defeated and not shrine_awakened:
-		# Active shrine: pulsing glow.
-		var pulse = 0.6 + 0.4 * sin(clock * 3.0)
-		draw_rect(Rect2(SHRINE_POSITION.x - 12 - cam_x, 260, 24, 40), Color('#c9a84c'))
-		draw_circle(SHRINE_POSITION + Vector2(-cam_x, -20), 8, Color('#ffe3a0').lerp(Color('#ffc074'), pulse))
-	elif shrine_awakened:
-		# Awakened shrine: bright.
-		draw_rect(Rect2(SHRINE_POSITION.x - 12 - cam_x, 260, 24, 40), Color('#ffe3a0'))
-		draw_circle(SHRINE_POSITION + Vector2(-cam_x, -20), 10, Color('#ffc074'))
-	else:
-		# Dormant shrine.
-		draw_rect(Rect2(SHRINE_POSITION.x - 12 - cam_x, 260, 24, 40), Color('#5a4a3a'))
-		draw_circle(SHRINE_POSITION + Vector2(-cam_x, -20), 6, Color('#8a7a6a'))
+	ember_art.environment(self, cam_x, platforms)
+	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_ENTRY_POS + Vector2(-cam_x, 1))
+	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_PREBOSS_POS + Vector2(-cam_x, 1))
+	var shrine_art = 'shrine-awake' if shrine_awakened else ('shrine-ready' if miniboss_defeated else 'shrine-dormant')
+	ember_art.stamp(self, shrine_art, SHRINE_POSITION + Vector2(-cam_x, 1))
 	# Draw shrine interaction prompt.
 	if shrine_interact and not shrine_awakened:
 		var progress = shrine_timer / Tuning.SHRINE_AWAKEN_DURATION
@@ -924,11 +896,7 @@ func _draw():
 		var x = enemy.x - cam_x
 		var w = 19 if enemy.medium else 13
 		var h = 28 if enemy.medium else 19
-		var color = Color('#f3dec1') if enemy.flash > 0 else (Color('#ab553b') if enemy.medium else Color('#cf7049'))
-		draw_rect(Rect2(x - w, 300 - h, w * 2, h), color)
-		for i in range(3):
-			draw_colored_polygon(PackedVector2Array([Vector2(x - w + i * w * 0.7, 300 - h), Vector2(x - w + 3 + i * w * 0.7, 289 - h), Vector2(x - w + 7 + i * w * 0.7, 300 - h)]), Color('#f9ad5a'))
-		draw_rect(Rect2(x + enemy.dir * 7 - 2, 285, 4, 4), Color('#fff0bc'))
+		ember_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x,300), enemy.dir, enemy.mode, enemy.flash > 0, clock)
 		draw_line(Vector2(x - w, 265 - h), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, 265 - h), Color('#c87f55'), 2)
 		if enemy.mode == 'warn':
 			draw_line(Vector2(x, 297), Vector2(x + enemy.dir * (64 if enemy.medium else 40), 297), Color('#ffb859'), 2)
@@ -942,13 +910,7 @@ func _draw():
 		var bx = miniboss['x'] - cam_x
 		var bw = 28
 		var bh = 40
-		var bcolor = Color('#f3dec1') if miniboss.flash > 0 else Color('#8b2a1a')
-		draw_rect(Rect2(bx - bw, 300 - bh, bw * 2, bh), bcolor)
-		# Spikes.
-		for i in range(4):
-			draw_colored_polygon(PackedVector2Array([Vector2(bx - bw + i * bw * 0.5, 300 - bh), Vector2(bx - bw + 5 + i * bw * 0.5, 285 - bh), Vector2(bx - bw + 10 + i * bw * 0.5, 300 - bh)]), Color('#ff6b35'))
-		# Eye.
-		draw_rect(Rect2(bx + miniboss.dir * 10 - 2, 280, 4, 4), Color('#fff0bc'))
+		ember_art.creature(self, 'miniboss', Vector2(bx,300), miniboss.dir, miniboss.get('phase','idle'), miniboss.flash > 0, clock)
 		# Health bar.
 		draw_line(Vector2(bx - bw, 255 - bh), Vector2(bx - bw + 2 * bw * miniboss.hp / miniboss.max_hp, 255 - bh), Color('#c87f55'), 3)
 		# Phase indicators.
