@@ -100,11 +100,11 @@ func _initialize() -> void:
 	m._process_guardian(0.01)
 	check('storm lightning becomes active', m.guardian.phase == 'storm_lightning', m.guardian.phase)
 	var lane_width: float = Tuning.GUARDIAN_LANE_WIDTH
-	m.guardian.safe_lane = 1
-	m.player.position = Vector2(Tuning.GUARDIAN_LEFT + 1.5 * lane_width, Tuning.GUARDIAN_GROUND_Y)
-	check('the unmarked lane is safe', not m._guardian_lane_hit())
+	m.guardian.safe_lane = 0
 	m.player.position = Vector2(Tuning.GUARDIAN_LEFT + 0.5 * lane_width, Tuning.GUARDIAN_GROUND_Y)
-	check('a marked lane is unsafe', m._guardian_lane_hit())
+	check('the safe lane is safe', not m._guardian_lane_hit())
+	m.player.position = Vector2(Tuning.GUARDIAN_LEFT + 1.5 * lane_width, Tuning.GUARDIAN_GROUND_Y)
+	check('a non-safe lane is unsafe', m._guardian_lane_hit())
 	m.guardian.timer = 0.0
 	m._process_guardian(0.01)
 	check('storm lightning recovers', m.guardian.phase == 'recover', m.guardian.phase)
