@@ -1,10 +1,11 @@
 extends SceneTree
-## Guardian elemental phase (issue #43).
+## Guardian elemental phase (issue #43) and mirror phase (issue #44).
 ## Run: godot --headless --path . --script tests/test_guardian_section.gd
 ## Covers access gating, the playable first phase, readable elemental attacks
 ## with recovery openings, the half-health transformation boundary that keeps
-## remaining health, death/retry from the outside checkpoint, and the gameplay
-## tuning that stays independent of guardian presentation.
+## remaining health, the mirror phase build capture and copy behavior,
+## death/retry from the outside checkpoint, and the gameplay tuning that
+## stays independent of guardian presentation.
 var Tuning = load('res://tuning.gd')
 var RunSave = load('res://run_save.gd')
 var failures := 0
@@ -186,20 +187,95 @@ func _initialize() -> void:
 		m._process_guardian(0.016)
 	check('transformation ends at the mirror boundary', m.guardian.phase == 'mirror' and m.guardian_phase_one_complete, m.guardian.phase)
 	check('mirror boundary holds the retained health', m.guardian.hp == remaining, str(m.guardian.hp))
-	m.guardian.hit_id = -1
+
+	# --- Mirror phase: build capture and copy initialization ---
+	check('mirror phase captures the player build', not m.guardian_copy.is_empty(), str(m.guardian_copy))
+	check('mirror copy has independent health', m.guardian_copy.hp == Tuning.GUARDIAN_HP, str(m.guardian_copy.hp))
+	check('mirror copy starts idle', m.guardian_copy.phase == 'idle', str(m.guardian_copy.phase))
+	var captured_ranks: Dictionary = m.guardian_copy.get('copy_ranks', {})
+	check('mirror copy captured the searing_claws rank', int(captured_ranks.get('searing_claws', 0)) == m.progression.rank_of('searing_claws'), str(captured_ranks))
+
+	# --- Mirror phase: copy cycles through attacks ---
+	m.guardian_copy.phase = 'idle'
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy begins ember warn', m.guardian_copy.phase == 'ember_warn', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy ember becomes active', m.guardian_copy.phase == 'ember_slam', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy ember recovers', m.guardian_copy.phase == 'recover' and m._copy_vulnerable(), m.guardian_copy.phase)
+
+	m.guardian_copy.phase = 'idle'
+	m.guardian_copy.timer = 0.0
+	m.guardian_copy.attack_index = 1
+	m._process_guardian(0.01)
+	check('mirror copy storm warn', m.guardian_copy.phase == 'storm_warn', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy storm active', m.guardian_copy.phase == 'storm_lightning', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy storm recovers', m.guardian_copy.phase == 'recover', m.guardian_copy.phase)
+
+	m.guardian_copy.phase = 'idle'
+	m.guardian_copy.timer = 0.0
+	m.guardian_copy.attack_index = 3
+	m._process_guardian(0.01)
+	check('mirror copy stone warn', m.guardian_copy.phase == 'stone_warn', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy stone charges', m.guardian_copy.phase == 'stone_charge', m.guardian_copy.phase)
+	m.guardian_copy.x = Tuning.GUARDIAN_LEFT
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy stone stuck exposes opening', m.guardian_copy.phase == 'stone_stuck' and m._copy_vulnerable(), m.guardian_copy.phase)
+
+	m.guardian_copy.phase = 'idle'
+	m.guardian_copy.timer = 0.0
+	m.guardian_copy.attack_index = 4
+	m._process_guardian(0.01)
+	check('mirror copy wind warn', m.guardian_copy.phase == 'wind_warn', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy wind swoops', m.guardian_copy.phase == 'wind_swoop', m.guardian_copy.phase)
+	m.guardian_copy.timer = 0.0
+	m._process_guardian(0.01)
+	check('mirror copy wind recovers', m.guardian_copy.phase == 'recover', m.guardian_copy.phase)
+
+	# --- Mirror phase: swipe connects only during recovery ---
+	m.guardian_copy.phase = 'recover'
+	m.guardian_copy.timer = 5.0
+	m.guardian_copy.hit_id = -1
+	m.player.facing = 1.0
+	m.player.position = Vector2(m.guardian_copy.x - 12.0, Tuning.GUARDIAN_GROUND_Y)
 	m.player.attack_id += 1
 	m.player.attack_left = 0.15
-	hp_before = m.guardian.hp
+	var copy_hp_before: float = m.guardian_copy.hp
 	m._process_guardian(0.01)
-	check('mirror boundary is inert in this slice', m.guardian.hp == hp_before, str(m.guardian.hp))
+	check('baseline swipe damages the copy recovery', m.guardian_copy.hp == copy_hp_before - Tuning.SWIPE_DAMAGE, str(m.guardian_copy.hp))
+	m.guardian_copy.phase = 'ember_slam'
+	m.guardian_copy.timer = 5.0
+	m.guardian_copy.hit_id = -1
+	m.player.attack_id += 1
+	m.player.attack_left = 0.15
+	copy_hp_before = m.guardian_copy.hp
+	m._process_guardian(0.01)
+	check('active copy is not vulnerable', m.guardian_copy.hp == copy_hp_before, str(m.guardian_copy.hp))
 
-	# --- Death retries the first phase from the outside checkpoint ---
+	# --- Mirror phase: independent tuning ---
+	check('mirror tuning values are independently configurable', Tuning.MIRROR_IDLE > 0.0 and Tuning.MIRROR_WARN > 0.0 and Tuning.MIRROR_ACTIVE > 0.0 and Tuning.MIRROR_RECOVER > 0.0)
+	check('mirror damage values are independently configurable', Tuning.MIRROR_SLAM_DAMAGE > 0.0 and Tuning.MIRROR_STORM_DAMAGE > 0.0 and Tuning.MIRROR_THORN_DAMAGE > 0.0 and Tuning.MIRROR_STONE_DAMAGE > 0.0 and Tuning.MIRROR_SWOOP_DAMAGE > 0.0)
+
+	# --- Death retries the whole encounter including mirror phase ---
 	m.progression.earn('ember', 5)
 	var window_before: int = m.progression.window_total()
 	var selections_before: int = m.progression.selections
 	m.hp = 0.0
 	m.respawn()
 	check('death restarts the first phase', m.guardian.is_empty() and not m.guardian_phase_one_complete and not m.in_guardian_arena)
+	check('death clears the mirror copy', m.guardian_copy.is_empty())
 	check('death returns to the outside guardian checkpoint', m.player.position == m.CHECKPOINT_GUARDIAN_POS, str(m.player.position))
 	check('death restores health', m.hp == Tuning.PLAYER_MAX_HP, str(m.hp))
 	check('death retains the earning window', m.progression.window_total() == window_before and m.progression.selections == selections_before, '%d/%d' % [m.progression.window_total(), m.progression.selections])

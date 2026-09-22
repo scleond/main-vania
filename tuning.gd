@@ -459,6 +459,23 @@ const GUARDIAN_WIND_ACTIVE := 0.45
 const GUARDIAN_WIND_SPEED := 330.0
 const GUARDIAN_WIND_RECOVER := 1.4
 const GUARDIAN_WIND_DAMAGE := 1.5
+# --- Guardian mirror phase (issue #44) ---
+# The copy uses independently tuned attack timings and damage. Player ranks
+# may affect visual intensity without proportionally scaling boss power.
+const MIRROR_IDLE := 0.6
+const MIRROR_WARN := 0.45
+const MIRROR_ACTIVE := 0.35
+const MIRROR_RECOVER := 0.8
+const MIRROR_SLAM_SPEED := 250.0
+const MIRROR_SLAM_DAMAGE := 1.5
+const MIRROR_STORM_DAMAGE := 1.5
+const MIRROR_THORN_DAMAGE := 1.0
+const MIRROR_CHARGE_SPEED := 260.0
+const MIRROR_CHARGE_DURATION := 0.55
+const MIRROR_STUCK := 1.1
+const MIRROR_STONE_DAMAGE := 1.5
+const MIRROR_SWOOP_SPEED := 270.0
+const MIRROR_SWOOP_DAMAGE := 1.0
 # Section adjacency map: each section connects to the sanctuary and its neighbors.
 const SECTION_CONNECTIONS: Dictionary = {
 	'ember': ['sanctuary', 'storm'],

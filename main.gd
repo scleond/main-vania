@@ -316,6 +316,7 @@ var guardian: Dictionary = {}             # active guardian encounter state
 var in_guardian_arena := false            # player is inside the arena beneath the sanctuary
 var guardian_phase_one_complete := false  # half-health transformation boundary reached
 var guardian_attack_index := 0            # next elemental attack in the cycle
+var guardian_copy: Dictionary = {}       # mirror phase copy state (issue #44)
 
 func label_at(text_value, at, size = 12, parent = null):
 	var label = Label.new()
@@ -534,6 +535,7 @@ func respawn(count = true):
 	secondary_cues.clear()
 	in_guardian_arena = false
 	_reset_guardian()
+	guardian_copy = {}
 	storm_encounter_index = 0
 	storm_miniboss = {}
 	storm_boss_spawned = false
@@ -677,6 +679,7 @@ func _init_section():
 	modifier_hop_active.clear()
 	in_guardian_arena = false
 	guardian = {}
+	guardian_copy = {}
 	guardian_phase_one_complete = false
 	guardian_attack_index = 0
 
@@ -1772,6 +1775,7 @@ func _leave_guardian_arena() -> void:
 
 func _reset_guardian() -> void:
 	guardian = {}
+	guardian_copy = {}
 	guardian_phase_one_complete = false
 	guardian_attack_index = 0
 
@@ -1851,6 +1855,12 @@ func _process_guardian(delta: float) -> void:
 	if guardian.is_empty():
 		return
 	if guardian.phase == 'mirror':
+		_process_mirror(delta)
+		if guardian_copy.is_empty():
+			return
+		_mirror_swipe_and_burn(delta)
+		if guardian_copy.hp <= 0:
+			_guardian_defeated()
 		return
 	guardian.flash = maxf(0.0, guardian.flash - delta)
 	guardian.timer -= delta
@@ -1936,7 +1946,8 @@ func _process_guardian(delta: float) -> void:
 				guardian.phase = 'mirror'
 				guardian.transformed = true
 				guardian_phase_one_complete = true
-				note('The Guardian shifts into its mirror phase. This slice ends at the transformation boundary.')
+				_mirror_capture_build()
+				note('The Guardian shifts into its mirror phase. Fight the copy!')
 	_guardian_swipe_and_burn(delta)
 	if not guardian.get('transformed', false) and not guardian_phase_one_complete and guardian.hp <= guardian.max_hp * 0.5:
 		_guardian_begin_transform()
@@ -1962,6 +1973,198 @@ func _guardian_swipe_and_burn(delta: float) -> void:
 			guardian.burn_tick = 0
 			guardian.hp -= Tuning.BURN_TICK_DAMAGE
 			guardian.flash = 0.1
+
+func _mirror_swipe_and_burn(delta: float) -> void:
+	# Mirror phase: only recovery openings on the copy accept damage.
+	if guardian_copy.is_empty() or guardian_copy.phase == 'transform':
+		return
+	if _copy_vulnerable():
+		var reach: float = Tuning.swipe_reach(arc_rank())
+		var relative: float = guardian_copy.x - player.position.x
+		if Tuning.swipe_is_active(player.attack_left) and guardian_copy.hit_id != player.attack_id and relative * player.facing > Tuning.SWIPE_BACK_ALLOW and absf(relative) < reach + Tuning.SWIPE_HITBOX_PAD and absf(player.position.y - Tuning.GUARDIAN_GROUND_Y) < Tuning.SWIPE_HIT_HEIGHT:
+			guardian_copy.hit_id = player.attack_id
+			guardian_copy.hp -= Tuning.SWIPE_DAMAGE
+			guardian_copy.flash = Tuning.ENEMY_HIT_FLASH
+			if burn_rank() > 0:
+				guardian_copy.burn = Tuning.burn_duration(burn_rank())
+	if guardian_copy.get('burn', 0.0) > 0:
+		guardian_copy.burn -= delta
+		guardian_copy.burn_tick += delta
+		if guardian_copy.burn_tick >= Tuning.BURN_TICK_INTERVAL:
+			guardian_copy.burn_tick = 0
+			guardian_copy.hp -= Tuning.BURN_TICK_DAMAGE
+			guardian_copy.flash = 0.1
+
+# --- Guardian mirror phase (issue #44) ---
+
+func _mirror_copy_ranks() -> Dictionary:
+	return guardian_copy.get('copy_ranks', {})
+
+func _copy_vulnerable() -> bool:
+	return not guardian_copy.is_empty() and (guardian_copy.get('phase', '') == 'recover' or guardian_copy.get('phase', '') == 'stone_stuck')
+
+func _mirror_element_focus() -> String:
+	return guardian_copy.get('element_focus', '')
+
+func _mirror_capture_build() -> void:
+	var captured_ranks: Dictionary = {}
+	for path_id in progression.ranks:
+		captured_ranks[path_id] = progression.ranks[path_id]
+	# Exclude reprisal to prevent retaliation reflection loops.
+	captured_ranks.erase('reprisal')
+	captured_ranks.erase('stonehide')
+	# Determine dominant element from captured ranks.
+	var element_counts: Dictionary = {}
+	for path_id in captured_ranks:
+		var element: String = str(Progression.PATH_CATALOG[path_id]['element'])
+		element_counts[element] = int(element_counts.get(element, 0)) + int(captured_ranks[path_id])
+	var focus := ''
+	var best := 0
+	for element in element_counts:
+		if int(element_counts[element]) > best:
+			best = int(element_counts[element])
+			focus = element
+	guardian_copy = {
+		'copy_ranks': captured_ranks,
+		'element_focus': focus,
+		'x': guardian.x,
+		'hp': Tuning.GUARDIAN_HP,
+		'max_hp': Tuning.GUARDIAN_HP,
+		'phase': 'idle',
+		'timer': Tuning.MIRROR_IDLE,
+		'dir': -1.0,
+		'attack_index': 0,
+		'safe_lane': 1,
+		'hit_id': -1,
+		'flash': 0.0,
+		'burn': 0.0,
+		'burn_tick': 0.0,
+		'target_x': _guardian_center(),
+	}
+
+func _mirror_choose_attack() -> void:
+	var attack: int = int(guardian_copy.get('attack_index', 0)) % 5
+	guardian_copy.attack_index = int(guardian_copy.get('attack_index', 0)) + 1
+	guardian_copy.safe_lane = (int(guardian_copy.get('safe_lane', 0)) + 1) % Tuning.GUARDIAN_LANE_COUNT
+	match attack:
+		0:
+			guardian_copy.phase = 'ember_warn'
+			guardian_copy.timer = Tuning.MIRROR_WARN
+		1:
+			guardian_copy.phase = 'storm_warn'
+			guardian_copy.timer = Tuning.MIRROR_WARN
+		2:
+			guardian_copy.phase = 'thorn_warn'
+			guardian_copy.timer = Tuning.MIRROR_WARN
+		3:
+			guardian_copy.phase = 'stone_warn'
+			guardian_copy.timer = Tuning.MIRROR_WARN
+		4:
+			guardian_copy.phase = 'wind_warn'
+			guardian_copy.timer = Tuning.MIRROR_WARN
+
+func _process_mirror(delta: float) -> void:
+	if guardian_copy.is_empty():
+		return
+	guardian_copy.flash = maxf(0.0, guardian_copy.flash - delta)
+	guardian_copy.timer -= delta
+	var px: float = player.position.x
+	var dx: float = px - guardian_copy.x
+	match guardian_copy.phase:
+		'idle':
+			if absf(dx) > 8.0:
+				guardian_copy.dir = signf(dx)
+			if guardian_copy.timer <= 0:
+				_mirror_choose_attack()
+		'ember_warn':
+			if absf(dx) > 8.0:
+				guardian_copy.dir = signf(dx)
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'ember_slam'
+				guardian_copy.timer = Tuning.MIRROR_ACTIVE
+				guardian_copy.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'ember_slam':
+			guardian_copy.x = move_toward(guardian_copy.x, guardian_copy.target_x, Tuning.MIRROR_SLAM_SPEED * delta)
+			if _copy_contact():
+				_hurt_player(Tuning.MIRROR_SLAM_DAMAGE, 'The copy rushes with an ember slam! Leap over and strike.')
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'recover'
+				guardian_copy.timer = Tuning.MIRROR_RECOVER
+		'storm_warn':
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'storm_lightning'
+				guardian_copy.timer = Tuning.MIRROR_ACTIVE
+		'storm_lightning':
+			if _copy_lane_hit():
+				_hurt_player(Tuning.MIRROR_STORM_DAMAGE, 'The copy calls storm lightning! Stand in the safe lane.')
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'recover'
+				guardian_copy.timer = Tuning.MIRROR_RECOVER
+		'thorn_warn':
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'thorn_brambles'
+				guardian_copy.timer = Tuning.MIRROR_ACTIVE
+		'thorn_brambles':
+			if _copy_lane_hit():
+				_hurt_player(Tuning.MIRROR_THORN_DAMAGE, 'The copy spreads thorns! Find the clear lane.')
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'recover'
+				guardian_copy.timer = Tuning.MIRROR_RECOVER
+		'stone_warn':
+			if absf(dx) > 4.0:
+				guardian_copy.dir = signf(dx)
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'stone_charge'
+				guardian_copy.timer = Tuning.MIRROR_CHARGE_DURATION
+				guardian_copy.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'stone_charge':
+			guardian_copy.x = clampf(guardian_copy.x + guardian_copy.dir * Tuning.MIRROR_CHARGE_SPEED * delta, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+			if _copy_contact():
+				_hurt_player(Tuning.MIRROR_STONE_DAMAGE, 'The copy charges with stone force! Dodge and strike the exposed opening.')
+			var at_wall: bool = guardian_copy.x <= Tuning.GUARDIAN_LEFT or guardian_copy.x >= Tuning.GUARDIAN_RIGHT
+			if at_wall or guardian_copy.timer <= 0:
+				guardian_copy.phase = 'stone_stuck'
+				guardian_copy.timer = Tuning.MIRROR_STUCK
+		'stone_stuck':
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'recover'
+				guardian_copy.timer = Tuning.MIRROR_RECOVER
+		'wind_warn':
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'wind_swoop'
+				guardian_copy.timer = Tuning.MIRROR_ACTIVE
+				guardian_copy.target_x = clampf(px, Tuning.GUARDIAN_LEFT, Tuning.GUARDIAN_RIGHT)
+		'wind_swoop':
+			guardian_copy.x = move_toward(guardian_copy.x, guardian_copy.target_x, Tuning.MIRROR_SWOOP_SPEED * delta)
+			if _copy_contact():
+				_hurt_player(Tuning.MIRROR_SWOOP_DAMAGE, 'The copy swoops with wind! Wait for the recovery and punish.')
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'recover'
+				guardian_copy.timer = Tuning.MIRROR_RECOVER
+		'recover':
+			if guardian_copy.timer <= 0:
+				guardian_copy.phase = 'idle'
+				guardian_copy.timer = Tuning.MIRROR_IDLE
+
+func _copy_contact() -> bool:
+	if not _guardian_player_low():
+		return false
+	return absf(guardian_copy.x - player.position.x) < Tuning.GUARDIAN_CONTACT_RANGE
+
+func _copy_lane_hit() -> bool:
+	if not _guardian_player_low():
+		return false
+	var lane := int(floor((player.position.x - Tuning.GUARDIAN_LEFT) / Tuning.GUARDIAN_LANE_WIDTH))
+	if lane < 0 or lane >= Tuning.GUARDIAN_LANE_COUNT:
+		return false
+	return lane != int(guardian_copy.get('safe_lane', 0))
+
+func _guardian_defeated() -> void:
+	note('The Guardian falls. The spirit evolves.')
+	guardian = {}
+	guardian_copy = {}
+	guardian_phase_one_complete = false
+	guardian_attack_index = 0
 
 func add_enemy(x, medium, element = Tuning.SECTION_EMBER):
 	var enemy_hp = (Tuning.STONE_MEDIUM_HP if medium else Tuning.STONE_EASY_HP) if element == Tuning.SECTION_STONE else (Tuning.MEDIUM_HP if medium else Tuning.EASY_HP)
@@ -3008,6 +3211,8 @@ func _draw():
 			draw_line(Vector2(gx, gy - 42), Vector2(gx, gy - 12), Color('#c59bff', 0.6), 2)
 	if not guardian.is_empty():
 		_draw_guardian(cam_x)
+	if guardian.phase == 'mirror' and not guardian_copy.is_empty():
+		_draw_guardian_copy(cam_x)
 
 func _guardian_element_color(phase: String) -> Color:
 	match phase:
@@ -3027,6 +3232,9 @@ func _guardian_element_color(phase: String) -> Color:
 
 func _draw_guardian(cam_x: float) -> void:
 	# Temporary guardian art: readable elemental telegraphs over a plain body.
+	# During mirror phase the guardian body is replaced by the copy; skip drawing.
+	if guardian.phase == 'mirror':
+		return
 	var gx: float = guardian.x - cam_x
 	var gy: float = Tuning.GUARDIAN_GROUND_Y
 	var color: Color = _guardian_element_color(guardian.phase)
@@ -3054,3 +3262,53 @@ func _draw_guardian(cam_x: float) -> void:
 	draw_line(Vector2(gx - 30, gy - 74), Vector2(gx - 30 + 60 * guardian.hp / guardian.max_hp, gy - 74), body_color, 4)
 	if _guardian_vulnerable():
 		draw_circle(Vector2(gx, gy - 68), 4, Color('#d5f39b'))
+
+func _copy_element_color(phase: String) -> Color:
+	match phase:
+		'ember_warn', 'ember_slam':
+			return Color('#ff6633')
+		'storm_warn', 'storm_lightning':
+			return Color('#8bd7f7')
+		'thorn_warn', 'thorn_brambles':
+			return Color('#92cf79')
+		'stone_warn', 'stone_charge', 'stone_stuck':
+			return Color('#aeb5bd')
+		'wind_warn', 'wind_swoop':
+			return Color('#a5e5cf')
+	return Color('#c59bff')
+
+func _draw_guardian_copy(cam_x: float) -> void:
+	# Draw the mirror phase copy: purple-tinted body with element focus indicators.
+	var cx: float = guardian_copy.x - cam_x
+	var cy: float = Tuning.GUARDIAN_GROUND_Y
+	var color: Color = _copy_element_color(guardian_copy.phase)
+	# Draw lane telegraphs for storm and thorn attacks.
+	if guardian_copy.phase == 'storm_warn' or guardian_copy.phase == 'storm_lightning' or guardian_copy.phase == 'thorn_warn' or guardian_copy.phase == 'thorn_brambles':
+		var warning: bool = guardian_copy.phase.ends_with('warn')
+		for lane in range(Tuning.GUARDIAN_LANE_COUNT):
+			var lane_x: float = Tuning.GUARDIAN_LEFT + lane * Tuning.GUARDIAN_LANE_WIDTH - cam_x
+			if lane == int(guardian_copy.safe_lane):
+				draw_rect(Rect2(lane_x + 4, cy - 8, Tuning.GUARDIAN_LANE_WIDTH - 8, 4), Color('#d5f39b'))
+				continue
+			var lane_color: Color = Color(color.r, color.g, color.b, 0.35) if warning else color
+			draw_rect(Rect2(lane_x, cy - 10, Tuning.GUARDIAN_LANE_WIDTH, 6), lane_color)
+			if not warning:
+				for tip in range(3):
+					draw_line(Vector2(lane_x + 10 + tip * 18, cy - 10), Vector2(lane_x + 18 + tip * 18, cy - 46), color, 3)
+	# Copy body: purple tint distinguishes from the player.
+	var copy_color: Color = Color('#c59bff')
+	draw_rect(Rect2(cx - 22, cy - 52, 44, 52), copy_color.darkened(0.35))
+	draw_rect(Rect2(cx - 15, cy - 62, 30, 24), copy_color)
+	if guardian_copy.flash > 0:
+		draw_rect(Rect2(cx - 22, cy - 62, 44, 62), Color(1, 1, 1, 0.6))
+	# Arc indicator for idle and warn states.
+	if guardian_copy.phase == 'idle' or guardian_copy.phase.ends_with('warn'):
+		draw_arc(Vector2(cx, cy - 30), 34.0, 0, TAU, 24, Color(color.r, color.g, color.b, 0.7), 2)
+	# Stone charge line.
+	if guardian_copy.phase == 'stone_charge':
+		draw_line(Vector2(cx, cy - 5), Vector2(cx + guardian_copy.dir * 60, cy - 5), Color('#aeb5bd'), 3)
+	# Health bar.
+	draw_line(Vector2(cx - 30, cy - 74), Vector2(cx - 30 + 60 * guardian_copy.hp / guardian_copy.max_hp, cy - 74), copy_color, 4)
+	# Vulnerable indicator.
+	if _copy_vulnerable():
+		draw_circle(Vector2(cx, cy - 68), 4, Color('#d5f39b'))
