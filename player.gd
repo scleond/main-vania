@@ -19,6 +19,7 @@ var invulnerable=0.0
 var clock=0.0
 var coyote=0.0
 var jump_buffer=0.0
+var air_jump_used=false
 var visual
 func _ready():
  collision_layer=2
@@ -45,16 +46,22 @@ func _physics_process(delta):
  jump_buffer=maxf(0,jump_buffer-delta)
  if is_on_floor():
   coyote=Tuning.COYOTE_DURATION
+  air_jump_used=false
  if Input.is_action_just_pressed('jump'):jump_buffer=Tuning.JUMP_BUFFER_DURATION
  if jump_buffer>0 and coyote>0:
   velocity.y=-Tuning.JUMP_SPEED
+  coyote=0
+  jump_buffer=0
+ elif jump_buffer>0 and int(path_ranks.get('airborne', 0))>0 and not air_jump_used:
+  velocity.y=-Tuning.AIRBORNE_JUMP_SPEED
+  air_jump_used=true
   coyote=0
   jump_buffer=0
  var axis=Input.get_axis('left','right')
  if axis!=0 and attack_left<=0:facing=signf(axis)
  if Input.is_action_just_pressed('dash') and dash_wait<=0:
   dash_left=Tuning.DASH_DURATION
-  dash_wait=Tuning.DASH_COOLDOWN
+  dash_wait=Tuning.slipstream_cooldown(int(path_ranks.get('slipstream', 0)))
   dash_id+=1
  if Input.is_action_just_pressed('attack') and attack_wait<=0 and dash_left<=0:
   attack_left=Tuning.SWIPE_DURATION
@@ -66,9 +73,9 @@ func _physics_process(delta):
  else:
   var target=axis*Tuning.PLAYER_MOVE_SPEED
   var grounded=is_on_floor()
-  var rate=Tuning.PLAYER_GROUND_ACCELERATION if grounded else Tuning.PLAYER_AIR_ACCELERATION
+  var rate=Tuning.PLAYER_GROUND_ACCELERATION if grounded else Tuning.airborne_acceleration(int(path_ranks.get('airborne', 0)))
   if axis==0:
-   rate=Tuning.PLAYER_GROUND_STOPPING if grounded else Tuning.PLAYER_AIR_STOPPING
+   rate=Tuning.PLAYER_GROUND_STOPPING if grounded else Tuning.airborne_stopping(int(path_ranks.get('airborne', 0)))
   velocity.x=move_toward(velocity.x,target,rate*delta)
  move_and_slide()
  position.x=clampf(position.x,Tuning.ROOM_LEFT_BOUND,Tuning.ROOM_RIGHT_BOUND)

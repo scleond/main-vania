@@ -19,7 +19,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 5890.0
+const ROOM_RIGHT_BOUND := 7110.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.95
 const HIT_LAUNCH_Y := -135.0
@@ -200,6 +200,53 @@ const REPRISAL_BASE_RADIUS := 47.0
 const REPRISAL_RADIUS_PER_RANK := 7.0
 const REPRISAL_MAX_RADIUS := 96.0
 const REPRISAL_COOLDOWN := 1.15
+
+# Wind movement and enemy combat values are independent of visual playback.
+const SLIPSTREAM_REDUCTION_PER_RANK := 0.075
+const SLIPSTREAM_MIN_COOLDOWN := 0.18
+const AIRBORNE_JUMP_SPEED := 290.0
+const AIRBORNE_AIR_ACCELERATION_BASE := 650.0
+const AIRBORNE_AIR_ACCELERATION_PER_RANK := 95.0
+const AIRBORNE_AIR_STOPPING_BASE := 360.0
+const AIRBORNE_AIR_STOPPING_PER_RANK := 65.0
+const AIRBORNE_CONTROL_CAP := 1350.0
+const SECTION_WIND := 'wind'
+const WIND_ENEMY_MIN_X := 6000.0
+const WIND_ENEMY_MAX_X := 7110.0
+const WIND_EASY_HOVER_HEIGHT := 282.0
+const WIND_MEDIUM_CIRCLE_HEIGHT := 252.0
+const WIND_ATTACK_HEIGHT := 283.0
+const WIND_EASY_APPROACH_SPEED := 65.0
+const WIND_MEDIUM_APPROACH_SPEED := 75.0
+const WIND_TRIGGER_RANGE := 155.0
+const WIND_EASY_WARN := 0.68
+const WIND_MEDIUM_WARN := 0.9
+const WIND_EASY_SWOOP_SPEED := 175.0
+const WIND_MEDIUM_DIVE_SPEED := 235.0
+const WIND_EASY_SWOOP_DURATION := 0.32
+const WIND_MEDIUM_DIVE_DURATION := 0.43
+const WIND_EASY_RECOVER := 0.95
+const WIND_MEDIUM_RECOVER := 1.25
+const WIND_CONTACT_RANGE := 24.0
+const WIND_EASY_DAMAGE := 1.0
+const WIND_MEDIUM_DAMAGE := 2.0
+const WIND_RETURN_SPEED := 110.0
+const WIND_CIRCLE_RADIUS := 82.0
+const WIND_CIRCLE_SPEED := 2.2
+const WIND_SWIPE_VERTICAL_REACH := 47.0
+
+static func slipstream_cooldown(rank: int) -> float:
+	return maxf(SLIPSTREAM_MIN_COOLDOWN, DASH_COOLDOWN - SLIPSTREAM_REDUCTION_PER_RANK * float(maxi(rank, 0)))
+
+static func airborne_acceleration(rank: int) -> float:
+	if rank <= 0:
+		return PLAYER_AIR_ACCELERATION
+	return minf(AIRBORNE_CONTROL_CAP, AIRBORNE_AIR_ACCELERATION_BASE + AIRBORNE_AIR_ACCELERATION_PER_RANK * float(rank - 1))
+
+static func airborne_stopping(rank: int) -> float:
+	if rank <= 0:
+		return PLAYER_AIR_STOPPING
+	return minf(AIRBORNE_CONTROL_CAP, AIRBORNE_AIR_STOPPING_BASE + AIRBORNE_AIR_STOPPING_PER_RANK * float(rank - 1))
 
 static func stonehide_reduction(rank: int) -> float:
 	if rank <= 0:
