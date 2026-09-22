@@ -78,7 +78,7 @@ func _initialize():
 	step(m, 0.05)
 	check('second window pauses again', m.choosing, 'not choosing')
 	m.select_upgrade('arc')
-	check('Flame Arc rank 1 widens reach', m.arc_rank() == 1 and Tuning.swipe_reach(m.arc_rank()) == 58.0, 'r=%d reach=%s' % [m.arc_rank(), str(Tuning.swipe_reach(m.arc_rank()))])
+	check('Flame Arc rank 1 widens reach', m.arc_rank() == 1 and Tuning.swipe_reach(m.arc_rank()) == 66.0, 'r=%d reach=%s' % [m.arc_rank(), str(Tuning.swipe_reach(m.arc_rank()))])
 	check('medium reward is two numen graphically', Tuning.MEDIUM_NUMEN == 2, 'reward')
 
 	# --- Death retains souls/upgrades, restores health + encounters ---

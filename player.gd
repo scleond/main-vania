@@ -58,7 +58,15 @@ func _physics_process(delta):
   attack_wait=Tuning.SWIPE_COOLDOWN
   attack_id+=1
  velocity.y+=Tuning.GRAVITY*delta
- velocity.x=facing*Tuning.PLAYER_DASH_SPEED if dash_left>0 else axis*Tuning.PLAYER_MOVE_SPEED
+ if dash_left>0:
+  velocity.x=facing*Tuning.PLAYER_DASH_SPEED
+ else:
+  var target=axis*Tuning.PLAYER_MOVE_SPEED
+  var grounded=is_on_floor()
+  var rate=Tuning.PLAYER_GROUND_ACCELERATION if grounded else Tuning.PLAYER_AIR_ACCELERATION
+  if axis==0:
+   rate=Tuning.PLAYER_GROUND_STOPPING if grounded else Tuning.PLAYER_AIR_STOPPING
+  velocity.x=move_toward(velocity.x,target,rate*delta)
  move_and_slide()
  position.x=clampf(position.x,Tuning.ROOM_LEFT_BOUND,Tuning.ROOM_RIGHT_BOUND)
  visual.scale.x=facing

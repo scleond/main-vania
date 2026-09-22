@@ -141,9 +141,19 @@ func update_frame():
   speed = (alternate_idle_playback_speed if alternate_presentation else idle_playback_speed)/4.0
  elif motion == Motion.RUN:
   speed = (alternate_run_playback_speed if alternate_presentation else run_playback_speed)/8.0
- elif motion == Motion.SWIPE:
-  speed = (alternate_attack_playback_speed if alternate_presentation else attack_playback_speed)/16.0
- frame = frame_at(name,presentation_clock*speed)
+ var sample_clock = presentation_clock * speed
+ if motion == Motion.SWIPE:
+  # Map the six-pose art's wind-up/strike/recovery groups onto the
+  # authoritative timer. Pose durations and frame counts never move a hit.
+  var anticipation = Tuning.SWIPE_DURATION - Tuning.SWIPE_ACTIVE_LATE
+  var recovery_start = Tuning.SWIPE_DURATION - Tuning.SWIPE_ACTIVE_EARLY
+  if presentation_clock < anticipation:
+   sample_clock = presentation_clock / anticipation * 0.08
+  elif presentation_clock < recovery_start:
+   sample_clock = 0.08 + (presentation_clock - anticipation) / (recovery_start - anticipation) * 0.08
+  else:
+   sample_clock = 0.16 + (presentation_clock - recovery_start) / Tuning.SWIPE_ACTIVE_EARLY * 0.10
+ frame = frame_at(name,sample_clock)
  # The presentation demo intentionally samples fewer attack poses.
  frame = parts.displayed_frame(name,frame,alternate_presentation)
  var pose = parts.pose(name,frame)

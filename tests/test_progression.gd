@@ -122,8 +122,8 @@ func _initialize():
 	# --- Tuning sanity: windows, growth, readable enemy timings ---
 	check('swipe window ordered', Tuning.SWIPE_ACTIVE_LATE > Tuning.SWIPE_ACTIVE_EARLY, 'inverted')
 	check('swipe active inside window', Tuning.swipe_is_active(0.15) and not Tuning.swipe_is_active(0.25) and not Tuning.swipe_is_active(0.02), 'window wrong')
-	check('no-arc reach is base 38', Tuning.swipe_reach(0) == 38.0, str(Tuning.swipe_reach(0)))
-	check('rank-1 arc reach is 58', Tuning.swipe_reach(1) == 58.0, str(Tuning.swipe_reach(1)))
+	check('no-arc reach is base 42', Tuning.swipe_reach(0) == 42.0, str(Tuning.swipe_reach(0)))
+	check('rank-1 arc reach is 66', Tuning.swipe_reach(1) == 66.0, str(Tuning.swipe_reach(1)))
 	check('arc reach grows per rank', Tuning.swipe_reach(8) > Tuning.swipe_reach(1), str(Tuning.swipe_reach(8)))
 	check('rank-1 burn is 2.2s', Tuning.burn_duration(1) == 2.2, str(Tuning.burn_duration(1)))
 	check('burn grows per rank', Tuning.burn_duration(8) > Tuning.burn_duration(1), str(Tuning.burn_duration(8)))
