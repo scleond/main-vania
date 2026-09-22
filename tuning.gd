@@ -451,3 +451,41 @@ const SHRINE_PULSE_RADIUS := 350.0
 # Neighbor visitor spawning near section connections.
 const VISITOR_SPAWN_RANGE := 120.0
 const VISITOR_MAX := 2
+
+# --- Enemy modifiers (issue #41) ---
+# When 3 shrines awaken, the 2 dormant sections become empowered. Every regular
+# enemy and remaining miniboss there gets one non-native modifier, uniformly
+# among the four elements other than its native element. Modifiers persist
+# through death/rest/Continue. Already defeated minibosses stay defeated.
+const MODIFIER_ELEMENTS: Array = ['ember', 'storm', 'thorn', 'stone', 'wind']
+# Ember modifier: post-attack burn patch — after a successful lunge/swipe, leaves
+# a small damaging zone at the impact point.
+const MODIFIER_EMBER_PATCH_DURATION := 1.2
+const MODIFIER_EMBER_PATCH_RADIUS := 28.0
+const MODIFIER_EMBER_PATCH_INTERVAL := 0.35
+const MODIFIER_EMBER_PATCH_DAMAGE := 0.5
+const MODIFIER_EMBER_PATCH_WARN := 0.45
+# Storm modifier: occasional short pulse — periodic radial burst that damages
+# the player if too close.
+const MODIFIER_STORM_PULSE_INTERVAL := 3.8
+const MODIFIER_STORM_PULSE_RADIUS := 55.0
+const MODIFIER_STORM_PULSE_DAMAGE := 1.0
+const MODIFIER_STORM_PULSE_WARN := 0.6
+# Thorn modifier: delayed shot — fires a single projectile after a longer delay
+# than the native Thorn attack.
+const MODIFIER_THORN_DELAY := 1.1
+const MODIFIER_THORN_SHOT_SPEED := 155.0
+const MODIFIER_THORN_SHOT_LIFETIME := 2.0
+const MODIFIER_THORN_SHOT_DAMAGE := 1.0
+const MODIFIER_THORN_SHOT_RADIUS := 11.0
+# Stone modifier: periodic reduced-damage one-hit guard — every few seconds the
+# enemy gains a frontal guard that blocks one hit, then breaks.
+const MODIFIER_STONE_GUARD_INTERVAL := 5.0
+const MODIFIER_STONE_GUARD_DURATION := 2.5
+const MODIFIER_STONE_GUARD_BREAK_RECOVER := 0.8
+# Wind modifier: occasional repositioning hop — periodically jumps to a new
+# position near the player, briefly airborne.
+const MODIFIER_WIND_HOP_INTERVAL := 4.2
+const MODIFIER_WIND_HOP_SPEED := 220.0
+const MODIFIER_WIND_HOP_HEIGHT := 120.0
+const MODIFIER_WIND_HOP_DURATION := 0.35

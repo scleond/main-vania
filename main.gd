@@ -301,6 +301,16 @@ var active_influence_sites: Array = []  # IDs of currently active influence site
 var influence_timers: Dictionary = {}   # site_id -> timer for cyclic effects
 var shrine_pulses: Array = []          # active pulse effects [{x, timer, element}]
 var guardian_unlocked := false          # true when all 5 shrines awakened
+# --- Enemy modifiers (issue #41) ---
+var empowered_sections: Array = []     # section IDs with active modifiers
+var modifier_assignments: Dictionary = {}  # enemy_key -> modifier_element (persisted)
+var modifier_patches: Array = []       # active ember burn patches [{x, timer, hits}]
+var modifier_shots: Array = []         # active thorn modifier shots [{position, velocity, timer}]
+var modifier_pulse_timers: Dictionary = {}  # enemy_key -> timer for storm pulse
+var modifier_guard_timers: Dictionary = {}  # enemy_key -> timer for stone guard
+var modifier_guard_active: Dictionary = {}  # enemy_key -> bool (guard currently up)
+var modifier_hop_timers: Dictionary = {}    # enemy_key -> timer for wind hop
+var modifier_hop_active: Dictionary = {}    # enemy_key -> bool (currently hopping)
 
 func label_at(text_value, at, size = 12, parent = null):
 	var label = Label.new()
@@ -449,6 +459,8 @@ func persist_run():
 		'objectives': {Tuning.SECTION_OBJECTIVE_EMBER: shrine_awakened, Tuning.SECTION_OBJECTIVE_STORM: storm_shrine_awakened, Tuning.SECTION_OBJECTIVE_THORN: thorn_shrine_awakened, Tuning.SECTION_OBJECTIVE_STONE: stone_shrine_awakened, Tuning.SECTION_OBJECTIVE_WIND: wind_shrine_awakened},
 		'active_influence_sites': active_influence_sites.duplicate(),
 		'guardian_unlocked': guardian_unlocked,
+		'empowered_sections': empowered_sections.duplicate(),
+		'modifier_assignments': modifier_assignments.duplicate(),
 	}
 	var run = run_store.make_run(active_checkpoint_id if active_checkpoint_id != '' else CHECKPOINT_ID, progression, world_state)
 	if run_store.save_run(run):
@@ -525,6 +537,13 @@ func respawn(count = true):
 	last_barb_attack = player.attack_id
 	last_bramble_dash = player.dash_id
 	last_bramble_x = player.position.x
+	modifier_patches.clear()
+	modifier_shots.clear()
+	modifier_pulse_timers.clear()
+	modifier_guard_timers.clear()
+	modifier_guard_active.clear()
+	modifier_hop_timers.clear()
+	modifier_hop_active.clear()
 	section_kills = 0
 	# Don't reset route_cleared — only new_game should reset the authored route.
 	_update_room()
@@ -632,6 +651,15 @@ func _init_section():
 	influence_timers.clear()
 	shrine_pulses.clear()
 	guardian_unlocked = false
+	empowered_sections.clear()
+	modifier_assignments.clear()
+	modifier_patches.clear()
+	modifier_shots.clear()
+	modifier_pulse_timers.clear()
+	modifier_guard_timers.clear()
+	modifier_guard_active.clear()
+	modifier_hop_timers.clear()
+	modifier_hop_active.clear()
 
 func _restore_section_state():
 	# Restore persistent section state from the saved run.
@@ -664,6 +692,9 @@ func _restore_section_state():
 	# Restore influence sites and guardian unlock.
 	active_influence_sites = Array(world.get('active_influence_sites', [])).duplicate()
 	guardian_unlocked = bool(world.get('guardian_unlocked', false))
+	# Restore empowered sections and modifier assignments.
+	empowered_sections = Array(world.get('empowered_sections', [])).duplicate()
+	modifier_assignments = Dictionary(world.get('modifier_assignments', {})).duplicate()
 	# Rebuild influence timers for active sites.
 	for site_id in active_influence_sites:
 		if not influence_timers.has(site_id):
@@ -917,6 +948,97 @@ func _check_guardian_unlock() -> void:
 		guardian_unlocked = true
 		note('All five shrines awakened! The Guardian stirs beneath the Sanctuary.')
 		persist_run()
+	# Check for empowered sections when exactly 3 shrines are awakened.
+	_check_empowered_sections()
+
+func _count_awakened_shrines() -> int:
+	var count := 0
+	if shrine_awakened:
+		count += 1
+	if storm_shrine_awakened:
+		count += 1
+	if thorn_shrine_awakened:
+		count += 1
+	if stone_shrine_awakened:
+		count += 1
+	if wind_shrine_awakened:
+		count += 1
+	return count
+
+func _get_dormant_sections() -> Array:
+	var dormant: Array = []
+	if not shrine_awakened:
+		dormant.append(Tuning.SECTION_EMBER)
+	if not storm_shrine_awakened:
+		dormant.append(Tuning.SECTION_STORM)
+	if not thorn_shrine_awakened:
+		dormant.append(Tuning.SECTION_THORN)
+	if not stone_shrine_awakened:
+		dormant.append(Tuning.SECTION_STONE)
+	if not wind_shrine_awakened:
+		dormant.append(Tuning.SECTION_WIND)
+	return dormant
+
+func _check_empowered_sections() -> void:
+	# When exactly 3 shrines are awakened, the 2 dormant sections become empowered.
+	# Assign modifiers to all enemies in those sections. Already assigned enemies
+	# keep their modifiers (no reroll). Already defeated minibosses stay defeated.
+	var awakened_count := _count_awakened_shrines()
+	if awakened_count < 3:
+		return
+	var dormant := _get_dormant_sections()
+	if dormant.size() != 2:
+		return
+	# Determine newly empowered sections (not already empowered).
+	var newly_empowered: Array = []
+	for section in dormant:
+		if not empowered_sections.has(section):
+			newly_empowered.append(section)
+	if newly_empowered.is_empty():
+		return
+	# Assign modifiers to enemies in newly empowered sections.
+	for section in newly_empowered:
+		_assign_modifiers_for_section(section)
+		empowered_sections.append(section)
+	persist_run()
+	note('Two sections are now Empowered! Enemies carry elemental modifiers.')
+
+func _assign_modifiers_for_section(section: String) -> void:
+	# Assign a non-native modifier to each enemy in the given section.
+	# Use stable enemy identities (x position + section) and persist assignments.
+	var encounters: Array = []
+	match section:
+		Tuning.SECTION_EMBER: encounters = EMBER_ROUTE_ENCOUNTERS
+		Tuning.SECTION_STORM: encounters = STORM_ROUTE_ENCOUNTERS
+		Tuning.SECTION_THORN: encounters = THORN_ROUTE_ENCOUNTERS
+		Tuning.SECTION_STONE: encounters = STONE_ROUTE_ENCOUNTERS
+		Tuning.SECTION_WIND: encounters = WIND_ROUTE_ENCOUNTERS
+	for enc in encounters:
+		var enemy_key := '%s_%d' % [section, int(enc['x'])]
+		if modifier_assignments.has(enemy_key):
+			continue  # Already assigned, no reroll.
+		var non_native: Array = []
+		for elem in Tuning.MODIFIER_ELEMENTS:
+			if elem != section:
+				non_native.append(elem)
+		# Deterministic assignment using hash of key for stability.
+		var idx: int = abs(enemy_key.hash()) % non_native.size()
+		modifier_assignments[enemy_key] = non_native[idx]
+
+func _get_enemy_modifier(enemy: Dictionary) -> String:
+	# Look up the modifier for an enemy based on its section and x position.
+	var section: String = enemy.get('element', '')
+	var key := '%s_%d' % [section, int(enemy.x)]
+	return modifier_assignments.get(key, '')
+
+func _get_modifier_color(modifier: String) -> Color:
+	match modifier:
+		'ember': return Color('#ff6633')
+		'storm': return Color('#8bd7f7')
+		'thorn': return Color('#92cf79')
+		'stone': return Color('#aeb5bd')
+		'wind': return Color('#a5e5cf')
+	return Color('#ffffff')
 
 func _section_for_position(px: float) -> String:
 	# Return the section name for a given x position.
@@ -1048,6 +1170,154 @@ func _spawn_neighbor_visitors() -> void:
 		if near_count >= 2:
 			continue
 		add_enemy(visitor_x, false, visitor_element)
+
+func _process_modifier_behaviors(delta: float) -> void:
+	# Process modifier behaviors for all enemies in empowered sections.
+	modifier_patches = modifier_patches.filter(func(p):
+		p.timer -= delta
+		if p.timer <= 0:
+			return false
+		# Damage enemies in range (not the owner).
+		for enemy in enemies:
+			if enemy.hp > 0 and not p.hits.has(enemy) and absf(enemy.x - p.x) < Tuning.MODIFIER_EMBER_PATCH_RADIUS:
+				enemy.hp -= Tuning.MODIFIER_EMBER_PATCH_DAMAGE
+				enemy.flash = Tuning.ENEMY_HIT_FLASH
+				p.hits.append(enemy)
+		# Damage player if in range.
+		if absf(player.position.x - p.x) < Tuning.MODIFIER_EMBER_PATCH_RADIUS and absf(player.position.y - 300) < Tuning.MODIFIER_EMBER_PATCH_RADIUS:
+			if player.invulnerable <= 0 and player.dash_left <= 0:
+				_hurt_player(Tuning.MODIFIER_EMBER_PATCH_DAMAGE, 'Ember patch! Avoid the burning ground.')
+		return true
+	)
+	modifier_shots = modifier_shots.filter(func(s):
+		s.position += s.velocity * delta
+		s.timer -= delta
+		if s.timer > 0 and s.position.distance_to(player.position - Vector2(0, 22)) < Tuning.MODIFIER_THORN_SHOT_RADIUS:
+			if player.invulnerable <= 0 and player.dash_left <= 0:
+				_hurt_player(Tuning.MODIFIER_THORN_SHOT_DAMAGE, 'Modifier thorn shot! Dodge the delayed projectile.')
+			return false
+		return s.timer > 0
+	)
+	for enemy in enemies:
+		if enemy.hp <= 0:
+			continue
+		var modifier := _get_enemy_modifier(enemy)
+		if modifier == '':
+			continue
+		var enemy_key := '%s_%d' % [enemy.element, int(enemy.x)]
+		match modifier:
+			'ember':
+				_process_modifier_ember(enemy, delta)
+			'storm':
+				_process_modifier_storm(enemy, enemy_key, delta)
+			'thorn':
+				_process_modifier_thorn(enemy, enemy_key, delta)
+			'stone':
+				_process_modifier_stone(enemy, enemy_key, delta)
+			'wind':
+				_process_modifier_wind(enemy, enemy_key, delta)
+
+func _process_modifier_ember(enemy: Dictionary, delta: float) -> void:
+	# Ember modifier: after a successful lunge/swipe, leaves a damaging zone.
+	# Trigger when enemy transitions from lunge to recover.
+	if enemy.mode == 'recover' and enemy.get('prev_mode', '') == 'lunge':
+		# Leave a burn patch at the enemy's current position.
+		modifier_patches.append({
+			'x': enemy.x,
+			'timer': Tuning.MODIFIER_EMBER_PATCH_DURATION,
+			'hits': [],
+		})
+	enemy['prev_mode'] = enemy.mode
+
+func _process_modifier_storm(enemy: Dictionary, enemy_key: String, delta: float) -> void:
+	# Storm modifier: periodic radial burst that damages the player if too close.
+	var timer: float = modifier_pulse_timers.get(enemy_key, 0.0)
+	timer -= delta
+	if timer <= -Tuning.MODIFIER_STORM_PULSE_WARN:
+		# Pulse fires: check if player is in range.
+		if absf(player.position.x - enemy.x) < Tuning.MODIFIER_STORM_PULSE_RADIUS and absf(player.position.y - 300) < Tuning.MODIFIER_STORM_PULSE_RADIUS:
+			if player.invulnerable <= 0 and player.dash_left <= 0:
+				_hurt_player(Tuning.MODIFIER_STORM_PULSE_DAMAGE, 'Storm pulse! Keep distance from modified enemies.')
+		timer = Tuning.MODIFIER_STORM_PULSE_INTERVAL
+	modifier_pulse_timers[enemy_key] = timer
+
+func _process_modifier_thorn(enemy: Dictionary, enemy_key: String, delta: float) -> void:
+	# Thorn modifier: fires a single delayed projectile after attacking.
+	if enemy.mode == 'recover' and enemy.get('prev_mode', '') == 'warn':
+		# Schedule a delayed shot.
+		var shot_timer: float = modifier_hop_timers.get(enemy_key, 0.0)
+		if shot_timer <= 0:
+			modifier_hop_timers[enemy_key] = Tuning.MODIFIER_THORN_DELAY
+			# Store the direction for the shot.
+			enemy['modifier_thorn_dir'] = enemy.dir
+	enemy['prev_mode'] = enemy.mode
+	# Process pending delayed shots.
+	var shot_timer: float = modifier_hop_timers.get(enemy_key, 0.0)
+	if shot_timer > 0:
+		shot_timer -= delta
+		if shot_timer <= 0:
+			# Fire the shot.
+			var direction: Vector2 = Vector2(enemy.get('modifier_thorn_dir', enemy.dir), 0)
+			modifier_shots.append({
+				'position': Vector2(enemy.x, Tuning.THORN_SHOT_HEIGHT),
+				'velocity': direction * Tuning.MODIFIER_THORN_SHOT_SPEED,
+				'timer': Tuning.MODIFIER_THORN_SHOT_LIFETIME,
+			})
+		modifier_hop_timers[enemy_key] = shot_timer
+
+func _process_modifier_stone(enemy: Dictionary, enemy_key: String, delta: float) -> void:
+	# Stone modifier: periodic frontal guard that blocks one hit, then breaks.
+	var timer: float = modifier_guard_timers.get(enemy_key, 0.0)
+	timer -= delta
+	if timer <= 0:
+		# Toggle guard state.
+		if modifier_guard_active.get(enemy_key, false):
+			# Guard breaks after duration.
+			modifier_guard_active[enemy_key] = false
+			timer = Tuning.MODIFIER_STONE_GUARD_INTERVAL
+		else:
+			# Activate guard.
+			modifier_guard_active[enemy_key] = true
+			timer = Tuning.MODIFIER_STONE_GUARD_DURATION
+	modifier_guard_timers[enemy_key] = timer
+
+func _process_modifier_wind(enemy: Dictionary, enemy_key: String, delta: float) -> void:
+	# Wind modifier: periodically jumps to a new position near the player.
+	var timer: float = modifier_hop_timers.get(enemy_key, 0.0)
+	timer -= delta
+	if timer <= 0 and not modifier_hop_active.get(enemy_key, false):
+		# Start hop.
+		modifier_hop_active[enemy_key] = true
+		timer = Tuning.MODIFIER_WIND_HOP_DURATION
+		# Set target position near player.
+		enemy['modifier_hop_target'] = clampf(player.position.x + randf_range(-60, 60), enemy.x - 120, enemy.x + 120)
+		enemy['modifier_hop_start_x'] = enemy.x
+		enemy['modifier_hop_start_y'] = enemy.y if enemy.element == Tuning.SECTION_WIND else 300.0
+	if modifier_hop_active.get(enemy_key, false):
+		# Interpolate hop position.
+		var progress: float = 1.0 - (timer / Tuning.MODIFIER_WIND_HOP_DURATION)
+		var target_x: float = enemy.get('modifier_hop_target', enemy.x)
+		var start_x: float = enemy.get('modifier_hop_start_x', enemy.x)
+		enemy.x = lerpf(start_x, target_x, progress)
+		if enemy.element == Tuning.SECTION_WIND:
+			var start_y: float = enemy.get('modifier_hop_start_y', enemy.y)
+			enemy.y = start_y - sin(progress * PI) * Tuning.MODIFIER_WIND_HOP_HEIGHT
+		if timer <= 0:
+			modifier_hop_active[enemy_key] = false
+			timer = Tuning.MODIFIER_WIND_HOP_INTERVAL
+			if enemy.element != Tuning.SECTION_WIND:
+				enemy.y = 300.0
+	modifier_hop_timers[enemy_key] = timer
+
+func _stone_modifier_guard_blocks(enemy: Dictionary, source_x: float) -> bool:
+	# Check if the stone modifier guard is active and blocking a frontal attack.
+	var modifier := _get_enemy_modifier(enemy)
+	if modifier != 'stone':
+		return false
+	var enemy_key := '%s_%d' % [enemy.element, int(enemy.x)]
+	if not modifier_guard_active.get(enemy_key, false):
+		return false
+	return (source_x - enemy.x) * enemy.dir >= Tuning.STONE_GUARD_FRONT_MARGIN
 
 func sync_derived():
 	# Legacy probe/HUD fields derived from the rule model.
@@ -1744,7 +2014,13 @@ func _process_wind_enemy(enemy: Dictionary, delta: float) -> void:
 		_hurt_player(Tuning.WIND_MEDIUM_DAMAGE if enemy.medium else Tuning.WIND_EASY_DAMAGE, 'Wind dive! Dodge the tell, then swipe during recovery.')
 
 func _stone_guard_blocks(enemy: Dictionary, source_x: float) -> bool:
-	return enemy.element == Tuning.SECTION_STONE and enemy.medium and enemy.mode != 'recover' and (source_x - enemy.x) * enemy.dir >= Tuning.STONE_GUARD_FRONT_MARGIN
+	# Native Stone medium guard blocks frontal attacks.
+	if enemy.element == Tuning.SECTION_STONE and enemy.medium and enemy.mode != 'recover' and (source_x - enemy.x) * enemy.dir >= Tuning.STONE_GUARD_FRONT_MARGIN:
+		return true
+	# Stone modifier guard also blocks frontal attacks when active.
+	if _stone_modifier_guard_blocks(enemy, source_x):
+		return true
+	return false
 
 func _spawn_player_effects() -> void:
 	if barb_rank() > 0 and player.attack_id > last_barb_attack:
@@ -1961,6 +2237,8 @@ func _physics_process(delta):
 				enemy.flash = 0.1
 		if enemy.hp > 0 and enemy.element == Tuning.SECTION_EMBER and enemy.mode == 'lunge' and absf(enemy.x - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266:
 			_hurt_player(Tuning.MEDIUM_DAMAGE if enemy.medium else Tuning.EASY_DAMAGE, 'Hit! Watch the warning, then punish the recovery.')
+	# Process enemy modifier behaviors for empowered sections.
+	_process_modifier_behaviors(delta)
 	_process_player_effects(delta)
 	var living = []
 	for enemy in enemies:
@@ -2070,6 +2348,8 @@ func refresh():
 		hud.text += '   |   Section complete'
 	if guardian_unlocked:
 		hud.text += '   |   Guardian unlocked'
+	if empowered_sections.size() > 0:
+		hud.text += '   |   Empowered: %s' % '/'.join(empowered_sections)
 	if active_influence_sites.size() > 0:
 		hud.text += '   |   Influence: %d sites' % active_influence_sites.size()
 	if choosing:
@@ -2079,7 +2359,15 @@ func refresh():
 func probe_enemies():
 	var out = []
 	for enemy in enemies:
-		out.append({'x': enemy.x, 'medium': enemy.medium, 'element': enemy.element, 'mode': enemy.mode, 'hp': enemy.hp, 'facing': enemy.dir, 'guarding': enemy.element == Tuning.SECTION_STONE and enemy.medium and enemy.mode != 'recover', 'recovery_left': maxf(0.0, enemy.timer) if enemy.mode == 'recover' else 0.0, 'y': enemy.y if enemy.element == Tuning.SECTION_WIND else 300.0})
+		var modifier := _get_enemy_modifier(enemy)
+		var enemy_key := '%s_%d' % [enemy.element, int(enemy.x)]
+		var modifier_active := false
+		if modifier == 'stone':
+			modifier_active = modifier_guard_active.get(enemy_key, false)
+		elif modifier == 'storm':
+			var pulse_t: float = modifier_pulse_timers.get(enemy_key, 0.0)
+			modifier_active = pulse_t > -Tuning.MODIFIER_STORM_PULSE_WARN and pulse_t <= 0
+		out.append({'x': enemy.x, 'medium': enemy.medium, 'element': enemy.element, 'mode': enemy.mode, 'hp': enemy.hp, 'facing': enemy.dir, 'guarding': _stone_guard_blocks(enemy, player.position.x), 'recovery_left': maxf(0.0, enemy.timer) if enemy.mode == 'recover' else 0.0, 'y': enemy.y if enemy.element == Tuning.SECTION_WIND else 300.0, 'modifier': modifier, 'modifier_active': modifier_active})
 	return out
 
 func probe_section():
@@ -2130,6 +2418,8 @@ func probe_section():
 		'active_influence_sites': active_influence_sites.duplicate(),
 		'guardian_unlocked': guardian_unlocked,
 		'shrine_pulses': shrine_pulses.size(),
+		'empowered_sections': empowered_sections.duplicate(),
+		'modifier_count': modifier_assignments.size(),
 	}
 
 func _process(_delta):
@@ -2236,6 +2526,24 @@ func _draw():
 			Tuning.SECTION_WIND: health_color = Color('#a5e5cf')
 		var health_y = enemy.y - h - 12 if enemy.element == Tuning.SECTION_WIND else 265 - h
 		draw_line(Vector2(x - w, health_y), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, health_y), health_color, 2)
+		# Draw modifier indicator if enemy has one.
+		var modifier := _get_enemy_modifier(enemy)
+		if modifier != '':
+			var mod_color := _get_modifier_color(modifier)
+			var mod_y: float = enemy.y + 8 if enemy.element == Tuning.SECTION_WIND else 308.0
+			draw_circle(Vector2(x, mod_y), 4, mod_color)
+			# Show active modifier states.
+			var enemy_key := '%s_%d' % [enemy.element, int(enemy.x)]
+			if modifier == 'stone' and modifier_guard_active.get(enemy_key, false):
+				draw_arc(Vector2(x, 300 if enemy.element != Tuning.SECTION_WIND else enemy.y), 12, PI, TAU, 8, Color('#aeb5bd', 0.6), 2)
+			elif modifier == 'storm':
+				var pulse_t: float = modifier_pulse_timers.get(enemy_key, 0.0)
+				if pulse_t > -Tuning.MODIFIER_STORM_PULSE_WARN and pulse_t <= 0:
+					draw_arc(Vector2(x, 300 if enemy.element != Tuning.SECTION_WIND else enemy.y), Tuning.MODIFIER_STORM_PULSE_RADIUS * 0.3, PI, TAU, 8, Color('#8bd7f7', 0.5), 2)
+			elif modifier == 'ember':
+				for patch in modifier_patches:
+					if absf(patch.x - enemy.x) < 5:
+						draw_arc(Vector2(patch.x - cam_x, 300), Tuning.MODIFIER_EMBER_PATCH_RADIUS, PI, TAU, 8, Color('#ff6633', 0.4), 2)
 		if enemy.mode == 'warn':
 			if enemy.element == Tuning.SECTION_STORM:
 				var direction: Vector2 = enemy.aim if enemy.medium else Vector2(enemy.dir, 0)
@@ -2260,6 +2568,11 @@ func _draw():
 		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#d5f39b'))
 	for patch in bramble_patches:
 		draw_arc(Vector2(patch.x - cam_x, Tuning.BRAMBLE_HEIGHT), Tuning.BRAMBLE_RADIUS, PI, TAU, 12, Color('#709c5a'), 3)
+	# Draw modifier patches and shots.
+	for patch in modifier_patches:
+		draw_arc(Vector2(patch.x - cam_x, 300), Tuning.MODIFIER_EMBER_PATCH_RADIUS, PI, TAU, 8, Color('#ff6633', 0.4), 2)
+	for shot in modifier_shots:
+		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#92cf79'))
 	for cue in secondary_cues:
 		if cue.pulse:
 			draw_arc(Vector2(cue['from'] - cam_x, 278), cue['to'], PI, TAU, 28, Color('#8bd7f7'), 3)
