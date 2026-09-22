@@ -19,7 +19,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 2350.0
+const ROOM_RIGHT_BOUND := 3550.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.95
 const HIT_LAUNCH_Y := -135.0
@@ -107,6 +107,47 @@ const SHRINE_AWAKEN_DURATION := 1.5
 const SECTION_OBJECTIVE_EMBER := 'objective_ember'
 # Influence-site connection points (stable IDs, not positions).
 const INFLUENCE_SLOTS := ['slot_a', 'slot_b']
+
+# Storm section: charged straight shots and medium relocation before aimed shots.
+const SECTION_STORM := 'storm'
+const STORM_SHOT_TRIGGER_RANGE := 230.0
+const STORM_EASY_CHARGE := 0.85
+const STORM_MEDIUM_RELOCATE_TIME := 0.42
+const STORM_MEDIUM_AIM_TIME := 0.8
+const STORM_EASY_RECOVER := 1.0
+const STORM_MEDIUM_RECOVER := 1.3
+const STORM_RELOCATE_DISTANCE := 75.0
+const STORM_RELOCATE_SPEED := 180.0
+const STORM_SHOT_SPEED := 210.0
+const STORM_SHOT_LIFETIME := 2.0
+const STORM_SHOT_DAMAGE := 1.0
+const STORM_SHOT_RADIUS := 13.0
+const STORM_SHOT_HEIGHT := 275.0
+const STORM_ENEMY_MIN_X := 2430.0
+const STORM_ENEMY_MAX_X := 3510.0
+# Secondary damage never invokes swipe hit effects.
+const CHAIN_BASE_REACH := 85.0
+const CHAIN_REACH_PER_RANK := 12.0
+const CHAIN_BASE_DAMAGE := 1.0
+const CHAIN_DAMAGE_PER_RANK := 0.5
+const THUNDERBEAT_EVERY_SWIPES := 3
+const THUNDERBEAT_BASE_REACH := 75.0
+const THUNDERBEAT_REACH_PER_RANK := 12.0
+const THUNDERBEAT_BASE_DAMAGE := 1.0
+const THUNDERBEAT_DAMAGE_PER_RANK := 0.5
+const SECONDARY_CUE_DURATION := 0.22
+
+static func chain_reach(rank: int) -> float:
+	return CHAIN_BASE_REACH + CHAIN_REACH_PER_RANK * float(maxi(rank - 1, 0))
+
+static func chain_damage(rank: int) -> float:
+	return CHAIN_BASE_DAMAGE + CHAIN_DAMAGE_PER_RANK * float(maxi(rank - 1, 0))
+
+static func thunderbeat_reach(rank: int) -> float:
+	return THUNDERBEAT_BASE_REACH + THUNDERBEAT_REACH_PER_RANK * float(maxi(rank - 1, 0))
+
+static func thunderbeat_damage(rank: int) -> float:
+	return THUNDERBEAT_BASE_DAMAGE + THUNDERBEAT_DAMAGE_PER_RANK * float(maxi(rank - 1, 0))
 
 
 ## Swipe reach for a given Flame Arc rank (0 = no upgrade).

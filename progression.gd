@@ -24,7 +24,7 @@ const PATH_CATALOG: Dictionary = {
 	'airborne': {'element': 'wind', 'name': 'Airborne', 'blurb': 'Adds an air jump and aerial control'},
 }
 ## Elements whose paths the current slice may offer in the live session.
-const PLAYABLE_ELEMENTS: Array = ['ember']
+const PLAYABLE_ELEMENTS: Array = ['ember', 'storm']
 
 var window_queue: Array = []
 var ranks: Dictionary = {}

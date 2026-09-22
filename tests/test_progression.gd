@@ -78,7 +78,7 @@ func _initialize():
 	p.earn('ember', 3)
 	check('mixed window totals 8', p.window_total() == 8, str(p.window_total()))
 	check('storm-led fixture offers storm paths at rule level', p.offer()['element'] == 'storm', str(p.offer()))
-	check('session withholds not-yet-playable storm', p.session_offer()['kind'] == 'withheld', str(p.session_offer()))
+	check('session offers playable Storm paths', p.session_offer()['kind'] == 'paths' and p.session_offer()['paths'].has('chain_spark') and p.session_offer()['paths'].has('thunderbeat'), str(p.session_offer()))
 
 	# --- Repeated selection: same path to rank 8 stays legal, both stay open ---
 	p = fresh()

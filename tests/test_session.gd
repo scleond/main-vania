@@ -81,11 +81,53 @@ func _initialize():
 	check('Flame Arc rank 1 widens reach', m.arc_rank() == 1 and Tuning.swipe_reach(m.arc_rank()) == 66.0, 'r=%d reach=%s' % [m.arc_rank(), str(Tuning.swipe_reach(m.arc_rank()))])
 	check('medium reward is two numen graphically', Tuning.MEDIUM_NUMEN == 2, 'reward')
 
+	# --- Storm route, native rewards, and mixed path effects ---
+	m.enemies.clear()
+	m.add_enemy(2500.0, false, 'storm')
+	m.add_enemy(2580.0, true, 'storm')
+	m.player.position = Vector2(2510, 299)
+	m.player.invulnerable = 999.0
+	step(m, 0.05)
+	check('Storm easy charges a straight shot', m.enemies[0].mode == 'warn', str(m.enemies[0].mode))
+	check('Storm medium relocates before aiming', m.enemies[1].mode == 'relocate', str(m.enemies[1].mode))
+	step(m, 0.5)
+	check('Storm medium has aimed warning', m.enemies[1].mode == 'warn' and m.enemies[1].aim.length() > 0, str(m.enemies[1].mode))
+	m.enemies.clear()
+	m.storm_shots.clear()
+	m.player.position = Vector2(70, 299)
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('storm', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	check('Storm path offer available', m.choosing and m.progression.session_offer().get('element') == 'storm', str(m.progression.session_offer()))
+	m.apply_path_choice('chain_spark')
+	check('mixed Ember and Storm ranks', m.burn_rank() == 1 and m.chain_rank() == 1, str(m.progression.ranks))
+	m.add_enemy(120.0, false)
+	m.add_enemy(165.0, false, 'storm')
+	var target = m.enemies[1]
+	m._chain_from(m.enemies[0])
+	check('Chain Spark damages nearby target once', target.hp == Tuning.EASY_HP - Tuning.chain_damage(1), str(target.hp))
+	check('Chain Spark does not recurse', m.secondary_cues.size() == 1, str(m.secondary_cues.size()))
+	m.enemies.clear()
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('storm', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	m.apply_path_choice('thunderbeat')
+	m.add_enemy(100.0, false, 'storm')
+	m.player.attack_id = 3
+	m.last_pulse_attack = 2
+	m._pulse_if_due()
+	check('Thunderbeat third swipe damages enemy', m.enemies[0].hp == Tuning.EASY_HP - Tuning.thunderbeat_damage(1), str(m.enemies[0].hp))
+	m.enemies.clear()
+	m.player.invulnerable = 0.0
+
 	# --- Death retains souls/upgrades, restores health + encounters ---
 	var selections = m.progression.selections
 	var window = m.progression.window_total()
 	m.progression.earn('ember', 2)
 	window = m.progression.window_total()
+	m.player.position = Vector2(190, 299)
 	m.hp = 0.0
 	step(m, 0.05)
 	check('death restores full health', m.hp == Tuning.PLAYER_MAX_HP, str(m.hp))
@@ -93,7 +135,7 @@ func _initialize():
 	check('death clears regular encounters', m.enemies.is_empty(), str(m.enemies.size()))
 	check('death retains selections', m.progression.selections == selections, str(m.progression.selections))
 	check('death retains window souls', m.progression.window_total() == window, str(m.progression.window_total()))
-	check('death retains ranks', m.burn_rank() == 1 and m.arc_rank() == 1, '%d/%d' % [m.burn_rank(), m.arc_rank()])
+	check('death retains mixed ranks', m.burn_rank() == 1 and m.arc_rank() == 1 and m.chain_rank() == 1 and m.thunder_rank() == 1, str(m.progression.ranks))
 	check('death counted', m.deaths == 1, str(m.deaths))
 
 	# --- Deliberate rest near checkpoint retains progress too ---
@@ -120,7 +162,7 @@ func _initialize():
 		if flips > 12:
 			break
 	check('session reaches Fully evolved', m.progression.is_fully_evolved() and m.progression.selections == 8, 'sel=%d' % m.progression.selections)
-	check('repeatable ranks accumulate', m.burn_rank() + m.arc_rank() == 8, '%d/%d' % [m.burn_rank(), m.arc_rank()])
+	check('repeatable ranks accumulate', m.burn_rank() + m.arc_rank() + m.chain_rank() + m.thunder_rank() == 8, str(m.progression.ranks))
 	var frozen = m.progression.window_total()
 	m.progression.earn('ember', 2)
 	check('post-cap souls rest', m.progression.window_total() == frozen, str(m.progression.window_total()))

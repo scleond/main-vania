@@ -92,6 +92,22 @@ func _initialize():
 	var tied_offer = tied_reloaded.progression.offer()
 	check('reload restores pending tied-element path offer', tied_reloaded.progression.pending_element == 'wind' and tied_offer['kind'] == 'paths' and tied_offer['element'] == 'wind', str(tied_offer))
 
+	var mixed = make_scene(storage)
+	mixed.new_game()
+	mixed.progression.earn('ember', 8)
+	mixed.choosing = true
+	mixed.apply_path_choice('searing_claws')
+	mixed.progression.earn('storm', 6)
+	mixed.choosing = true
+	mixed.apply_path_choice('chain_spark')
+	mixed.progression.earn('storm', 6)
+	mixed.choosing = true
+	mixed.apply_path_choice('thunderbeat')
+	mixed.respawn(false)
+	var mixed_reloaded = make_scene(storage)
+	mixed_reloaded.continue_run()
+	check('Continue retains mixed Ember and Storm paths', mixed_reloaded.burn_rank() == 1 and mixed_reloaded.chain_rank() == 1 and mixed_reloaded.thunder_rank() == 1 and mixed_reloaded.progression.selections == 3, str(mixed_reloaded.progression.ranks))
+
 	var unavailable = MemoryStorage.new()
 	unavailable.available = false
 	var fallback = make_scene(unavailable)
@@ -104,6 +120,8 @@ func _initialize():
 	reloaded.free()
 	tied.free()
 	tied_reloaded.free()
+	mixed.free()
+	mixed_reloaded.free()
 	fallback.free()
 
 	print('---')

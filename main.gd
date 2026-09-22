@@ -39,15 +39,29 @@ const EMBER_ROUTE_ENCOUNTERS := [
 	{'x': 1720, 'medium': false, 'room': 'route3'},
 	{'x': 1780, 'medium': false, 'room': 'route3'},
 ]
+const STORM_ROUTE_ENCOUNTERS := [
+	{'x': 2470, 'medium': false, 'room': 'storm1'},
+	{'x': 2560, 'medium': false, 'room': 'storm1'},
+	{'x': 2660, 'medium': false, 'room': 'storm1'},
+	{'x': 2760, 'medium': true, 'room': 'storm1'},
+	{'x': 2890, 'medium': false, 'room': 'storm2'},
+	{'x': 2990, 'medium': false, 'room': 'storm2'},
+	{'x': 3100, 'medium': false, 'room': 'storm2'},
+	{'x': 3210, 'medium': true, 'room': 'storm2'},
+	{'x': 3330, 'medium': false, 'room': 'storm2'},
+	{'x': 3440, 'medium': false, 'room': 'storm2'},
+]
 const EMBER_ROOM_BOUNDS := {
 	'entry': {'left': 15.0, 'right': 500.0},
 	'route1': {'left': 450.0, 'right': 900.0},
 	'route2': {'left': 850.0, 'right': 1350.0},
 	'route3': {'left': 1300.0, 'right': 1850.0},
 	'boss': {'left': 1800.0, 'right': 2350.0},
+	'storm1': {'left': 2370.0, 'right': 2830.0},
+	'storm2': {'left': 2830.0, 'right': 3550.0},
 }
 const EMBER_PLATFORMS := [
-	Rect2(0, 300, 2400, 60),
+	Rect2(0, 300, 3600, 60),
 	Rect2(165, 240, 95, 10),
 	Rect2(375, 217, 105, 10),
 	Rect2(560, 235, 80, 10),
@@ -118,6 +132,10 @@ var encounter_index := 0
 var encounter_wait := 0.0
 var miniboss_fire_cooldown := 0.0
 var spawn_queue: Array = []
+var storm_shots: Array = []
+var storm_encounter_index := 0
+var secondary_cues: Array = []
+var last_pulse_attack := -1
 
 func label_at(text_value, at, size = 12, parent = null):
 	var label = Label.new()
@@ -180,7 +198,7 @@ func _ready():
 	add_child(player)
 	ui = CanvasLayer.new()
 	add_child(ui)
-	label_at('EMBER SECTION / exploration route', Vector2(16, 8), 18)
+	label_at('EMBER + STORM / exploration route', Vector2(16, 8), 18)
 	hud = label_at('', Vector2(16, 33))
 	status = label_at('', Vector2(16, 53), 11)
 	label_at('A/D or arrows move · Space jump · J/X action · Shift dash', Vector2(16, 315), 11)
@@ -202,8 +220,8 @@ func _ready():
 	choice_detail = label_at('Choose one permanent Ember upgrade with Numen. Play is paused.', Vector2(18, 40), 12, choice)
 	slot_buttons.append(button_at('1 · Searing Claws', Vector2(18, 72), func(): choose_current_slot(0), choice))
 	slot_buttons.append(button_at('2 · Flame Arc', Vector2(285, 72), func(): choose_current_slot(1), choice))
-	label_at('Searing Claws adds fiery fingers; Flame Arc reveals a furnace core.', Vector2(18, 118), 11, choice)
-	label_at('Strongest affinity colors the head spikes. Both repeat to rank 8.', Vector2(18, 139), 11, choice)
+	label_at('Ember and Storm paths accumulate; each selection raises its path rank.', Vector2(18, 118), 11, choice)
+	label_at('Eight selections reach the Cap. No extra action button is needed.', Vector2(18, 139), 11, choice)
 	choice.hide()
 	pause_label = label_at('PAUSED — Esc to resume', Vector2(195, 165), 19)
 	pause_label.hide()
@@ -302,6 +320,10 @@ func respawn(count = true):
 	shrine_interact = false
 	shrine_timer = 0.0
 	spawn_queue.clear()
+	storm_shots.clear()
+	secondary_cues.clear()
+	storm_encounter_index = 0
+	last_pulse_attack = player.attack_id
 	section_kills = 0
 	# Don't reset route_cleared — only new_game should reset the authored route.
 	_update_room()
@@ -326,6 +348,12 @@ func burn_rank():
 func arc_rank():
 	return progression.rank_of('flame_arc')
 
+func chain_rank():
+	return progression.rank_of('chain_spark')
+
+func thunder_rank():
+	return progression.rank_of('thunderbeat')
+
 # --- Section initialization (issue #24) ---
 
 func _init_section():
@@ -346,6 +374,9 @@ func _init_section():
 	miniboss = {}
 	miniboss_fire_cooldown = 0.0
 	spawn_queue.clear()
+	storm_shots.clear()
+	storm_encounter_index = 0
+	secondary_cues.clear()
 
 func _restore_section_state():
 	# Restore persistent section state from the saved run.
@@ -370,6 +401,9 @@ func _restore_section_state():
 func _update_room():
 	# Map player position to the current room for encounter spawning.
 	var px = player.position.x
+	if px >= EMBER_ROOM_BOUNDS['storm1']['left']:
+		room = 'storm2' if px >= EMBER_ROOM_BOUNDS['storm2']['left'] else 'storm1'
+		return
 	for r in EMBER_ROOM_BOUNDS:
 		var bounds = EMBER_ROOM_BOUNDS[r]
 		if px >= bounds['left'] and px <= bounds['right']:
@@ -451,9 +485,7 @@ func process_session_actions():
 		respawn(false)
 
 func choose_current_slot(slot):
-	# Routes the two visible choice buttons: tied-element picks when the offer
-	# asks for an element, path picks otherwise. Single-element Ember play
-	# always lands on the path branch; ties are exercised by rule fixtures.
+	# Routes the two visible choice buttons for tied elements or paths.
 	if not choosing:
 		return
 	var current = progression.session_offer()
@@ -530,12 +562,31 @@ func _spawn_room_encounters():
 	if encounter_index >= EMBER_ROUTE_ENCOUNTERS.size() and enemies.is_empty():
 		route_cleared = true
 
-func add_enemy(x, medium):
+func _spawn_storm_encounters():
+	if not room.begins_with('storm'):
+		return
+	var active := 0
+	for enemy in enemies:
+		if enemy.element == Tuning.SECTION_STORM:
+			active += 1
+	while storm_encounter_index < STORM_ROUTE_ENCOUNTERS.size() and active < Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
+		var encounter = STORM_ROUTE_ENCOUNTERS[storm_encounter_index]
+		if encounter['room'] != room:
+			if room == 'storm2':
+				storm_encounter_index += 1
+				continue
+			break
+		add_enemy(encounter['x'], encounter['medium'], Tuning.SECTION_STORM)
+		storm_encounter_index += 1
+		active += 1
+
+func add_enemy(x, medium, element = Tuning.SECTION_EMBER):
 	enemies.append({
 		'x': float(x),
 		'hp': Tuning.MEDIUM_HP if medium else Tuning.EASY_HP,
 		'max_hp': Tuning.MEDIUM_HP if medium else Tuning.EASY_HP,
-		'medium': medium, 'mode': 'approach', 'timer': 0.0, 'dir': -1.0,
+		'medium': medium, 'element': element, 'mode': 'approach', 'timer': 0.0, 'dir': -1.0,
+		'aim': Vector2.ZERO, 'relocate_target': 0.0,
 		'hit_id': -1, 'burn': 0.0, 'burn_tick': 0.0, 'flash': 0.0,
 	})
 
@@ -669,6 +720,94 @@ func _process_fire_waves(delta):
 			living.append(fw)
 	fire_waves = living
 
+func _hurt_by_storm_shot():
+	if player.invulnerable > 0 or player.dash_left > 0:
+		return
+	hp -= Tuning.STORM_SHOT_DAMAGE
+	player.invulnerable = Tuning.INVULNERABLE_DURATION
+	player.velocity.y = Tuning.HIT_LAUNCH_Y
+	if hp > 0 and is_instance_valid(player.visual):
+		player.visual.play_hurt()
+	note('Storm shot! Move during the charge, then punish recovery.')
+
+func _process_storm_shots(delta):
+	var living: Array = []
+	for shot in storm_shots:
+		shot.position += shot.velocity * delta
+		shot.timer -= delta
+		if shot.timer > 0 and shot.position.distance_to(player.position - Vector2(0, 22)) < Tuning.STORM_SHOT_RADIUS:
+			_hurt_by_storm_shot()
+			continue
+		if shot.timer > 0:
+			living.append(shot)
+	storm_shots = living
+
+func _process_storm_enemy(enemy: Dictionary, delta: float) -> void:
+	var difference: float = player.position.x - enemy.x
+	match enemy.mode:
+		'approach':
+			if absf(difference) < Tuning.STORM_SHOT_TRIGGER_RANGE:
+				enemy.dir = signf(difference) if difference != 0 else 1.0
+				if enemy.medium:
+					enemy.mode = 'relocate'
+					enemy.timer = Tuning.STORM_MEDIUM_RELOCATE_TIME
+					enemy.relocate_target = clampf(enemy.x - enemy.dir * Tuning.STORM_RELOCATE_DISTANCE, Tuning.STORM_ENEMY_MIN_X, Tuning.STORM_ENEMY_MAX_X)
+				else:
+					enemy.mode = 'warn'
+					enemy.timer = Tuning.STORM_EASY_CHARGE
+			elif absf(difference) < Tuning.ENEMY_LEASH_RANGE:
+				enemy.x += signf(difference) * Tuning.EASY_APPROACH_SPEED * delta
+		'relocate':
+			enemy.x = move_toward(enemy.x, enemy.relocate_target, Tuning.STORM_RELOCATE_SPEED * delta)
+			if enemy.timer <= 0:
+				enemy.mode = 'warn'
+				enemy.timer = Tuning.STORM_MEDIUM_AIM_TIME
+				enemy.aim = (player.position - Vector2(0, 22) - Vector2(enemy.x, Tuning.STORM_SHOT_HEIGHT)).normalized()
+		'warn':
+			if enemy.timer <= 0:
+				var origin := Vector2(enemy.x, Tuning.STORM_SHOT_HEIGHT)
+				var direction := Vector2(enemy.dir, 0)
+				if enemy.medium:
+					direction = enemy.aim
+				storm_shots.append({'position': origin, 'velocity': direction * Tuning.STORM_SHOT_SPEED, 'timer': Tuning.STORM_SHOT_LIFETIME})
+				enemy.mode = 'recover'
+				enemy.timer = Tuning.STORM_MEDIUM_RECOVER if enemy.medium else Tuning.STORM_EASY_RECOVER
+		'recover':
+			if enemy.timer <= 0:
+				enemy.mode = 'approach'
+
+func _secondary_damage(enemy: Dictionary, amount: float) -> void:
+	# Deliberately bypass swipe-hit handling: secondary effects cannot chain or ignite.
+	enemy.hp -= amount
+	enemy.flash = Tuning.ENEMY_HIT_FLASH
+
+func _chain_from(source: Dictionary) -> void:
+	if chain_rank() <= 0:
+		return
+	var nearest: Dictionary = {}
+	var distance := Tuning.chain_reach(chain_rank())
+	for target in enemies:
+		if target == source or target.hp <= 0:
+			continue
+		var gap: float = absf(target.x - source.x)
+		if gap <= distance:
+			nearest = target
+			distance = gap
+	if not nearest.is_empty():
+		_secondary_damage(nearest, Tuning.chain_damage(chain_rank()))
+		secondary_cues.append({'from': source.x, 'to': nearest.x, 'timer': Tuning.SECONDARY_CUE_DURATION, 'pulse': false})
+
+func _pulse_if_due() -> void:
+	if thunder_rank() <= 0 or player.attack_id <= last_pulse_attack:
+		return
+	last_pulse_attack = player.attack_id
+	if player.attack_id % Tuning.THUNDERBEAT_EVERY_SWIPES != 0:
+		return
+	for enemy in enemies:
+		if enemy.hp > 0 and absf(enemy.x - player.position.x) <= Tuning.thunderbeat_reach(thunder_rank()):
+			_secondary_damage(enemy, Tuning.thunderbeat_damage(thunder_rank()))
+	secondary_cues.append({'from': player.position.x, 'to': Tuning.thunderbeat_reach(thunder_rank()), 'timer': Tuning.SECONDARY_CUE_DURATION, 'pulse': true})
+
 func _physics_process(delta):
 	process_session_actions()
 	sync_derived()
@@ -695,10 +834,15 @@ func _physics_process(delta):
 		choice.show()
 		return
 	# Spawn route encounters when the room is clear.
-	if enemies.is_empty() and not route_cleared and not miniboss_spawned:
+	if enemies.is_empty() and not route_cleared and not miniboss_spawned and not room.begins_with('storm'):
 		encounter_wait -= delta
 		if encounter_wait <= 0:
 			_spawn_room_encounters()
+			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
+	if room.begins_with('storm') and enemies.is_empty():
+		encounter_wait -= delta
+		if encounter_wait <= 0:
+			_spawn_storm_encounters()
 			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
 	# Spawn miniboss after route is cleared.
 	if not miniboss_defeated and not miniboss_spawned:
@@ -708,11 +852,18 @@ func _physics_process(delta):
 		_process_miniboss(delta)
 	# Process fire waves.
 	_process_fire_waves(delta)
+	_process_storm_shots(delta)
+	_pulse_if_due()
+	for cue in secondary_cues:
+		cue.timer -= delta
+	secondary_cues = secondary_cues.filter(func(cue): return cue.timer > 0)
 	for enemy in enemies:
 		enemy.flash = maxf(0, enemy.flash - delta)
 		var difference = player.position.x - enemy.x
 		enemy.timer -= delta
-		if enemy.mode == 'approach':
+		if enemy.element == Tuning.SECTION_STORM:
+			_process_storm_enemy(enemy, delta)
+		elif enemy.mode == 'approach':
 			if absf(difference) < Tuning.EASY_TRIGGER_RANGE and player.position.y > 250:
 				enemy.mode = 'warn'
 				enemy.timer = Tuning.warn_duration(enemy.medium)
@@ -732,6 +883,8 @@ func _physics_process(delta):
 			enemy.mode = 'approach'
 		# Clamp to current room bounds.
 		var bounds = EMBER_ROOM_BOUNDS.get(room, {'left': Tuning.ENEMY_MIN_X, 'right': Tuning.ENEMY_MAX_X})
+		if enemy.element == Tuning.SECTION_STORM:
+			bounds = {'left': Tuning.STORM_ENEMY_MIN_X, 'right': Tuning.STORM_ENEMY_MAX_X}
 		enemy.x = clampf(enemy.x, bounds['left'], bounds['right'])
 		var reach = Tuning.swipe_reach(arc_rank())
 		var relative = enemy.x - player.position.x
@@ -742,6 +895,7 @@ func _physics_process(delta):
 			enemy.x += player.facing * Tuning.SWIPE_KNOCKBACK
 			if burn_rank() > 0:
 				enemy.burn = Tuning.burn_duration(burn_rank())
+			_chain_from(enemy)
 		if enemy.burn > 0:
 			enemy.burn -= delta
 			enemy.burn_tick += delta
@@ -749,7 +903,7 @@ func _physics_process(delta):
 				enemy.burn_tick = 0
 				enemy.hp -= Tuning.BURN_TICK_DAMAGE
 				enemy.flash = 0.1
-		if enemy.hp > 0 and enemy.mode == 'lunge' and absf(enemy.x - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266 and player.invulnerable <= 0 and player.dash_left <= 0:
+		if enemy.hp > 0 and enemy.element == Tuning.SECTION_EMBER and enemy.mode == 'lunge' and absf(enemy.x - player.position.x) < Tuning.ENEMY_CONTACT_RANGE and player.position.y > 266 and player.invulnerable <= 0 and player.dash_left <= 0:
 			hp -= Tuning.MEDIUM_DAMAGE if enemy.medium else Tuning.EASY_DAMAGE
 			player.invulnerable = Tuning.INVULNERABLE_DURATION
 			player.velocity.y = Tuning.HIT_LAUNCH_Y
@@ -760,7 +914,7 @@ func _physics_process(delta):
 	for enemy in enemies:
 		if enemy.hp <= 0:
 			var reward = Tuning.MEDIUM_NUMEN if enemy.medium else Tuning.EASY_NUMEN
-			progression.earn(Tuning.SECTION_EMBER, reward)
+			progression.earn(enemy.element, reward)
 			kills += 1
 			section_kills += 1
 			choice_delay = Tuning.CHOICE_DELAY
@@ -785,6 +939,10 @@ func path_label(path_id, slot):
 	var key = '1' if slot == 0 else '2'
 	if path_id == 'searing_claws':
 		return '%s · %s  rank %d → %d\nSwipes ignite (burn %.1fs, tick %.1fs)' % [key, info['name'], rank, rank + 1, Tuning.burn_duration(rank + 1), Tuning.BURN_TICK_INTERVAL]
+	if path_id == 'chain_spark':
+		return '%s · %s  rank %d → %d\nArc reach %d · damage %.1f' % [key, info['name'], rank, rank + 1, int(Tuning.chain_reach(rank + 1)), Tuning.chain_damage(rank + 1)]
+	if path_id == 'thunderbeat':
+		return '%s · %s  rank %d → %d\nEvery %d swipes · radius %d · damage %.1f' % [key, info['name'], rank, rank + 1, Tuning.THUNDERBEAT_EVERY_SWIPES, int(Tuning.thunderbeat_reach(rank + 1)), Tuning.thunderbeat_damage(rank + 1)]
 	return '%s · %s  rank %d → %d\nSwipes reach farther (reach %d)' % [key, info['name'], rank, rank + 1, int(Tuning.swipe_reach(rank + 1))]
 
 func refresh_choice_panel():
@@ -802,8 +960,9 @@ func refresh_choice_panel():
 		var selected = progression.selections
 		choice_title.text = 'EVOLVE / %s family  (%d/%d)' % [element_name, selected + 1, Progression.SELECTION_CAP]
 		choice_detail.text = 'Choose one permanent %s upgrade with Numen (repeatable to rank 8). Play is paused.' % element_name.capitalize()
+		var paths: Array = current.get('paths', [])
 		for i in range(slot_buttons.size()):
-			slot_buttons[i].text = path_label(PATH_IDS[i], i) if i < PATH_IDS.size() else '—'
+			slot_buttons[i].text = path_label(paths[i], i) if i < paths.size() else '—'
 
 func refresh():
 	var requirement = progression.window_requirement()
@@ -815,6 +974,7 @@ func refresh():
 		hud.text = 'Health %.1f / %d   |   Numen %d / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), numen, requirement, burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	else:
 		hud.text = 'Health %.1f / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
+	hud.text += '   |   Chain r%d · Beat r%d' % [chain_rank(), thunder_rank()]
 	if session_only:
 		hud.text += '   |   Session-only (storage unavailable)'
 	hud.text += '   |   Room: %s' % room.capitalize()
@@ -829,7 +989,7 @@ func refresh():
 func probe_enemies():
 	var out = []
 	for enemy in enemies:
-		out.append({'x': enemy.x, 'medium': enemy.medium, 'mode': enemy.mode, 'hp': enemy.hp})
+		out.append({'x': enemy.x, 'medium': enemy.medium, 'element': enemy.element, 'mode': enemy.mode, 'hp': enemy.hp})
 	return out
 
 func probe_section():
@@ -845,6 +1005,8 @@ func probe_section():
 		'miniboss_phase': miniboss.get('phase', ''),
 		'miniboss_hp': miniboss.get('hp', 0) if not miniboss.is_empty() else 0,
 		'fire_waves': fire_waves.size(),
+		'storm_shots': storm_shots.size(),
+		'storm_encounters': storm_encounter_index,
 	}
 
 func _process(_delta):
@@ -853,15 +1015,18 @@ func _process(_delta):
 	if OS.has_feature('web'):
 		JavaScriptBridge.eval('window.__vania_probe = ' + JSON.stringify({
 			'ready': true, 'playing': playing, 'choosing': choosing, 'paused': paused,
-			'hp': hp, 'numen': numen, 'upgrade': upgrade, 'mixed': false,
+			'hp': hp, 'numen': numen, 'upgrade': upgrade, 'mixed': (burn_rank() + arc_rank()) > 0 and (chain_rank() + thunder_rank()) > 0,
 			'numen_window': progression.window_total(), 'window_counts': progression.window_counts(),
 			'next_threshold': progression.next_threshold(), 'window_requirement': progression.window_requirement(),
 			'selections': progression.selections, 'pending': progression.pending_level_ups(),
 			'dominant': progression.dominant_elements(), 'fully_evolved': progression.is_fully_evolved(),
 			'offer_kind': progression.session_offer()['kind'],
-			'ranks': {'searing_claws': burn_rank(), 'flame_arc': arc_rank()},
+			'ranks': {'searing_claws': burn_rank(), 'flame_arc': arc_rank(), 'chain_spark': chain_rank(), 'thunderbeat': thunder_rank()},
 			'burn_rank': burn_rank(), 'arc_rank': arc_rank(),
 			'swipe_reach': Tuning.swipe_reach(arc_rank()), 'burn_duration': Tuning.burn_duration(burn_rank()),
+			'chain_reach': Tuning.chain_reach(chain_rank()), 'chain_damage': Tuning.chain_damage(chain_rank()),
+			'thunderbeat_reach': Tuning.thunderbeat_reach(thunder_rank()), 'thunderbeat_damage': Tuning.thunderbeat_damage(thunder_rank()),
+			'storm_shots': storm_shots.size(), 'storm_encounters': storm_encounter_index,
 			'wave': wave, 'kills': kills, 'deaths': deaths, 'retries': retries,
 			'checkpoint_id': active_checkpoint_id if active_checkpoint_id != '' else CHECKPOINT_ID, 'has_saved_run': not saved_run.is_empty(), 'session_only': session_only,
 			'x': player.position.x, 'y': player.position.y,
@@ -880,7 +1045,7 @@ func _notification(what):
 
 func _draw():
 	# Camera: offset drawing based on player position for scrolling.
-	var cam_x = clampf(player.position.x - 320, 0, 2400 - 640)
+	var cam_x = clampf(player.position.x - 320, 0, 3600 - 640)
 	ember_art.environment(self, cam_x, platforms)
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_ENTRY_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_PREBOSS_POS + Vector2(-cam_x, 1))
@@ -897,14 +1062,27 @@ func _draw():
 		var w = 19 if enemy.medium else 13
 		var h = 28 if enemy.medium else 19
 		ember_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x,300), enemy.dir, enemy.mode, enemy.flash > 0, clock)
-		draw_line(Vector2(x - w, 265 - h), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, 265 - h), Color('#c87f55'), 2)
+		if enemy.element == Tuning.SECTION_STORM:
+			draw_circle(Vector2(x, 272 - h), 5, Color('#8bd7f7'))
+		draw_line(Vector2(x - w, 265 - h), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, 265 - h), Color('#8bd7f7') if enemy.element == Tuning.SECTION_STORM else Color('#c87f55'), 2)
 		if enemy.mode == 'warn':
-			draw_line(Vector2(x, 297), Vector2(x + enemy.dir * (64 if enemy.medium else 40), 297), Color('#ffb859'), 2)
+			if enemy.element == Tuning.SECTION_STORM:
+				var direction: Vector2 = enemy.aim if enemy.medium else Vector2(enemy.dir, 0)
+				draw_line(Vector2(x, Tuning.STORM_SHOT_HEIGHT), Vector2(x, Tuning.STORM_SHOT_HEIGHT) + direction * 115, Color('#8bd7f7'), 2)
+			else:
+				draw_line(Vector2(x, 297), Vector2(x + enemy.dir * (64 if enemy.medium else 40), 297), Color('#ffb859'), 2)
 			draw_rect(Rect2(x - 2, 268 - h, 4, 7), Color('#ffe3a0'))
 		if enemy.mode == 'recover':
 			draw_circle(Vector2(x, 269 - h), 2, Color('#9bbcaf'))
 		if enemy.burn > 0:
 			draw_colored_polygon(PackedVector2Array([Vector2(x - 4, 275 - h), Vector2(x, 263 - h), Vector2(x + 4, 275 - h)]), Color('#ff8b35'))
+	for shot in storm_shots:
+		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#8bd7f7'))
+	for cue in secondary_cues:
+		if cue.pulse:
+			draw_arc(Vector2(cue['from'] - cam_x, 278), cue['to'], PI, TAU, 28, Color('#8bd7f7'), 3)
+		else:
+			draw_line(Vector2(cue['from'] - cam_x, 270), Vector2(cue['to'] - cam_x, 270), Color('#8bd7f7'), 3)
 	# Draw miniboss.
 	if not miniboss.is_empty():
 		var bx = miniboss['x'] - cam_x
