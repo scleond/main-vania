@@ -7,6 +7,7 @@ var active=false
 var upgrade=''
 var arc_rank=0
 var burn_rank=0
+var path_ranks: Dictionary = {}
 var facing=1.0
 var dash_left=0.0
 var dash_wait=0.0
@@ -73,7 +74,7 @@ func _physics_process(delta):
  position.x=clampf(position.x,Tuning.ROOM_LEFT_BOUND,Tuning.ROOM_RIGHT_BOUND)
  visual.scale.x=facing
  visual.present(velocity,is_on_floor(),attack_left,dash_left,attack_id)
- visual.path_ranks={'searing_claws':burn_rank,'flame_arc':arc_rank}
+ visual.path_ranks=path_ranks
  visual.modulate.a=0.45 if invulnerable>0 and int(clock*15)%2==0 else 1.0
  visual.queue_redraw()
  queue_redraw()

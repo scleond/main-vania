@@ -7,7 +7,7 @@ extends RefCounted
 ## excess numen keep their elements for the next window. After SELECTION_CAP
 ## selections the spirit is Fully evolved and progression numen stop
 ## accumulating. All ten paths of the five elements live in PATH_CATALOG so
-## later slices can reuse this model; the session UI gates offers to Ember.
+## later slices can reuse this model; the session UI gates unfinished Wind paths.
 const ELEMENTS: Array = ['ember', 'storm', 'thorn', 'stone', 'wind']
 const THRESHOLDS: Array = [8, 14, 20, 26, 30, 34, 38, 42]
 const SELECTION_CAP := 8
@@ -24,7 +24,7 @@ const PATH_CATALOG: Dictionary = {
 	'airborne': {'element': 'wind', 'name': 'Airborne', 'blurb': 'Adds an air jump and aerial control'},
 }
 ## Elements whose paths the current slice may offer in the live session.
-const PLAYABLE_ELEMENTS: Array = ['ember', 'storm', 'thorn']
+const PLAYABLE_ELEMENTS: Array = ['ember', 'storm', 'thorn', 'stone']
 
 var window_queue: Array = []
 var ranks: Dictionary = {}

@@ -231,6 +231,84 @@ func _initialize():
 	m.continue_run()
 	check('Continue restores Ember and both Thorn ranks', m.burn_rank() == 1 and m.barb_rank() == 1 and m.bramble_rank() == 1, str(m.progression.ranks))
 
+	# --- Stone route, guarded counterplay, durable paths, and a mixed build ---
+	m.start_run()
+	m.player.position = Vector2(4840, 299)
+	m._update_room()
+	check('Stone route is reachable', m.room == 'stone1' and Tuning.ROOM_RIGHT_BOUND > 5700, m.room)
+	m.add_enemy(4880.0, false, 'stone')
+	m.add_enemy(4900.0, true, 'stone')
+	m.player.invulnerable = 999.0
+	step(m, 0.05)
+	check('Stone easy and medium warn', m.enemies[0].mode == 'warn' and m.enemies[1].mode == 'warn', str(m.probe_enemies()))
+	m.enemies[0].timer = 0
+	m._process_stone_enemy(m.enemies[0], 0.01)
+	check('Stone easy swipes', m.enemies[0].mode == 'swipe', m.enemies[0].mode)
+	m.enemies[0].timer = 0
+	m._process_stone_enemy(m.enemies[0], 0.01)
+	check('Stone easy recovers', m.enemies[0].mode == 'recover', m.enemies[0].mode)
+	m.enemies[0].hp = 0.0
+	m.enemies[1].hp = 0.0
+	step(m, 0.05)
+	check('Stone kills grant typed easy and medium Numen', m.progression.window_counts()['stone'] == Tuning.EASY_NUMEN + Tuning.MEDIUM_NUMEN, str(m.progression.window_counts()))
+	m.start_run()
+	m.enemies.clear()
+	m.player.position = Vector2(70, 299)
+	m.player.invulnerable = 0.0
+	m.progression.earn('stone', 8)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	check('Stone Numen opens both paths', m.choosing and m.progression.session_offer().get('element') == 'stone' and m.progression.session_offer().get('paths', []).size() == 2, str(m.progression.session_offer()))
+	m.apply_path_choice('stonehide')
+	check('Stonehide rank reduces but never negates hits', m.stonehide_rank() == 1 and Tuning.stonehide_reduction(8) < 1.0, str(m.progression.ranks))
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('stone', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	m.apply_path_choice('reprisal')
+	check('Reprisal earned as second Stone path', m.reprisal_rank() == 1, str(m.progression.ranks))
+	m.enemies.clear()
+	m.add_enemy(110.0, false, 'stone')
+	m.player.invulnerable = 0.0
+	m.reprisal_cooldown = 0.0
+	var hp_before = m.hp
+	m._hurt_player(2.0, 'Stone test hit')
+	check('Stonehide reduces actual damage', is_equal_approx(m.hp, hp_before - 2.0 * (1.0 - Tuning.stonehide_reduction(1))), str(m.hp))
+	check('Reprisal bursts once on hurt', is_equal_approx(m.enemies[0].hp, Tuning.STONE_EASY_HP - Tuning.reprisal_damage(1)) and m.reprisal_cooldown > 0, str(m.enemies[0].hp))
+	var burst_hp = m.enemies[0].hp
+	m._hurt_player(2.0, 'Blocked repeat')
+	check('hurt immunity and burst cooldown prevent repeated triggers', m.enemies[0].hp == burst_hp, str(m.enemies[0].hp))
+	m.enemies.clear()
+	m.player.position = Vector2(4820, 299)
+	m.player.facing = 1.0
+	m.add_enemy(4850.0, true, 'stone')
+	var guard = m.enemies[0]
+	guard.dir = -1.0
+	check('medium guard blocks frontal attacks', m._stone_guard_blocks(guard, m.player.position.x), str(m.probe_enemies()))
+	m.player.attack_id += 1
+	m.player.attack_left = 0.15
+	m._physics_process(0.01)
+	check('front swipe is blocked by Stone guard', guard.hp == Tuning.STONE_MEDIUM_HP, str(guard.hp))
+	guard.mode = 'recover'
+	guard.timer = 1.0
+	check('medium guard exposes during recovery', not m._stone_guard_blocks(guard, m.player.position.x), str(m.probe_enemies()))
+	m.player.attack_id += 1
+	m.player.attack_left = 0.15
+	m._physics_process(0.01)
+	check('baseline swipe damages recovering Stone medium', guard.hp < Tuning.STONE_MEDIUM_HP, str(guard.hp))
+	m.enemies.clear()
+	m.player.position = Vector2(70, 299)
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('ember', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	m.apply_path_choice('searing_claws')
+	check('defensive mixed build earns Ember and Stone', m.burn_rank() == 1 and m.stonehide_rank() == 1 and m.reprisal_rank() == 1, str(m.progression.ranks))
+	m.respawn(false)
+	check('Stone paths survive retry', m.stonehide_rank() == 1 and m.reprisal_rank() == 1, str(m.progression.ranks))
+	m.continue_run()
+	check('Stone mixed build survives Continue', m.burn_rank() == 1 and m.stonehide_rank() == 1 and m.reprisal_rank() == 1, str(m.progression.ranks))
+
 	print('---')
 	print('checks: %d failures: %d' % [checks, failures])
 	if failures > 0:

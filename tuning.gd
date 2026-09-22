@@ -19,7 +19,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 4710.0
+const ROOM_RIGHT_BOUND := 5890.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.95
 const HIT_LAUNCH_Y := -135.0
@@ -167,6 +167,54 @@ const BRAMBLE_BASE_DAMAGE := 1.0
 const BRAMBLE_DAMAGE_PER_RANK := 0.5
 const BRAMBLE_SPACING := 34.0
 const BRAMBLE_HEIGHT := 295.0
+
+# Stone: the easy foe approaches and swipes; the medium faces its target with
+# a frontal guard until its own swipe finishes. Recovery is a fixed opening.
+const SECTION_STONE := 'stone'
+const STONE_ENEMY_MIN_X := 4790.0
+const STONE_ENEMY_MAX_X := 5890.0
+const STONE_EASY_HP := 3.0
+const STONE_MEDIUM_HP := 6.0
+const STONE_EASY_APPROACH_SPEED := 43.0
+const STONE_MEDIUM_APPROACH_SPEED := 29.0
+const STONE_EASY_TRIGGER_RANGE := 65.0
+const STONE_MEDIUM_TRIGGER_RANGE := 75.0
+const STONE_EASY_WARN := 0.62
+const STONE_MEDIUM_WARN := 0.9
+const STONE_EASY_SWIPE_DURATION := 0.26
+const STONE_MEDIUM_SWIPE_DURATION := 0.33
+const STONE_EASY_RECOVER := 0.78
+const STONE_MEDIUM_RECOVER := 1.25
+const STONE_EASY_SWIPE_REACH := 43.0
+const STONE_MEDIUM_SWIPE_REACH := 52.0
+const STONE_EASY_DAMAGE := 1.0
+const STONE_MEDIUM_DAMAGE := 2.0
+const STONE_GUARD_FRONT_MARGIN := 0.0
+# Each rank improves both paths, with hard caps below immunity and burst spam.
+const STONEHIDE_BASE_REDUCTION := 0.12
+const STONEHIDE_REDUCTION_PER_RANK := 0.06
+const STONEHIDE_MAX_REDUCTION := 0.54
+const REPRISAL_BASE_DAMAGE := 0.75
+const REPRISAL_DAMAGE_PER_RANK := 0.25
+const REPRISAL_BASE_RADIUS := 47.0
+const REPRISAL_RADIUS_PER_RANK := 7.0
+const REPRISAL_MAX_RADIUS := 96.0
+const REPRISAL_COOLDOWN := 1.15
+
+static func stonehide_reduction(rank: int) -> float:
+	if rank <= 0:
+		return 0.0
+	return minf(STONEHIDE_BASE_REDUCTION + STONEHIDE_REDUCTION_PER_RANK * float(rank - 1), STONEHIDE_MAX_REDUCTION)
+
+static func reprisal_damage(rank: int) -> float:
+	if rank <= 0:
+		return 0.0
+	return REPRISAL_BASE_DAMAGE + REPRISAL_DAMAGE_PER_RANK * float(rank - 1)
+
+static func reprisal_radius(rank: int) -> float:
+	if rank <= 0:
+		return 0.0
+	return minf(REPRISAL_BASE_RADIUS + REPRISAL_RADIUS_PER_RANK * float(rank - 1), REPRISAL_MAX_RADIUS)
 
 static func barb_damage(rank: int) -> float:
 	return BARB_BASE_DAMAGE + BARB_DAMAGE_PER_RANK * float(maxi(rank - 1, 0))
