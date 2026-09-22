@@ -51,6 +51,17 @@ const STORM_ROUTE_ENCOUNTERS := [
 	{'x': 3330, 'medium': false, 'room': 'storm2'},
 	{'x': 3440, 'medium': false, 'room': 'storm2'},
 ]
+const THORN_ROUTE_ENCOUNTERS := [
+	{'x': 3610, 'medium': false, 'room': 'thorn1'},
+	{'x': 3710, 'medium': false, 'room': 'thorn1'},
+	{'x': 3820, 'medium': false, 'room': 'thorn1'},
+	{'x': 3940, 'medium': true, 'room': 'thorn1'},
+	{'x': 4110, 'medium': false, 'room': 'thorn2'},
+	{'x': 4230, 'medium': false, 'room': 'thorn2'},
+	{'x': 4360, 'medium': true, 'room': 'thorn2'},
+	{'x': 4490, 'medium': false, 'room': 'thorn2'},
+	{'x': 4620, 'medium': true, 'room': 'thorn2'},
+]
 const EMBER_ROOM_BOUNDS := {
 	'entry': {'left': 15.0, 'right': 500.0},
 	'route1': {'left': 450.0, 'right': 900.0},
@@ -59,9 +70,11 @@ const EMBER_ROOM_BOUNDS := {
 	'boss': {'left': 1800.0, 'right': 2350.0},
 	'storm1': {'left': 2370.0, 'right': 2830.0},
 	'storm2': {'left': 2830.0, 'right': 3550.0},
+	'thorn1': {'left': 3550.0, 'right': 4050.0},
+	'thorn2': {'left': 4050.0, 'right': 4750.0},
 }
 const EMBER_PLATFORMS := [
-	Rect2(0, 300, 3600, 60),
+	Rect2(0, 300, 4800, 60),
 	Rect2(165, 240, 95, 10),
 	Rect2(375, 217, 105, 10),
 	Rect2(560, 235, 80, 10),
@@ -134,6 +147,13 @@ var miniboss_fire_cooldown := 0.0
 var spawn_queue: Array = []
 var storm_shots: Array = []
 var storm_encounter_index := 0
+var thorn_shots: Array = []
+var thorn_encounter_index := 0
+var barb_shots: Array = []
+var bramble_patches: Array = []
+var last_barb_attack := -1
+var last_bramble_dash := -1
+var last_bramble_x := 0.0
 var secondary_cues: Array = []
 var last_pulse_attack := -1
 
@@ -198,7 +218,7 @@ func _ready():
 	add_child(player)
 	ui = CanvasLayer.new()
 	add_child(ui)
-	label_at('EMBER + STORM / exploration route', Vector2(16, 8), 18)
+	label_at('EMBER + STORM + THORN / exploration route', Vector2(16, 8), 18)
 	hud = label_at('', Vector2(16, 33))
 	status = label_at('', Vector2(16, 53), 11)
 	label_at('A/D or arrows move · Space jump · J/X action · Shift dash', Vector2(16, 315), 11)
@@ -220,7 +240,7 @@ func _ready():
 	choice_detail = label_at('Choose one permanent Ember upgrade with Numen. Play is paused.', Vector2(18, 40), 12, choice)
 	slot_buttons.append(button_at('1 · Searing Claws', Vector2(18, 72), func(): choose_current_slot(0), choice))
 	slot_buttons.append(button_at('2 · Flame Arc', Vector2(285, 72), func(): choose_current_slot(1), choice))
-	label_at('Ember and Storm paths accumulate; each selection raises its path rank.', Vector2(18, 118), 11, choice)
+	label_at('Ember, Storm, and Thorn paths accumulate with each selection.', Vector2(18, 118), 11, choice)
 	label_at('Eight selections reach the Cap. No extra action button is needed.', Vector2(18, 139), 11, choice)
 	choice.hide()
 	pause_label = label_at('PAUSED — Esc to resume', Vector2(195, 165), 19)
@@ -321,9 +341,16 @@ func respawn(count = true):
 	shrine_timer = 0.0
 	spawn_queue.clear()
 	storm_shots.clear()
+	thorn_shots.clear()
+	barb_shots.clear()
+	bramble_patches.clear()
 	secondary_cues.clear()
 	storm_encounter_index = 0
+	thorn_encounter_index = 0
 	last_pulse_attack = player.attack_id
+	last_barb_attack = player.attack_id
+	last_bramble_dash = player.dash_id
+	last_bramble_x = player.position.x
 	section_kills = 0
 	# Don't reset route_cleared — only new_game should reset the authored route.
 	_update_room()
@@ -354,6 +381,12 @@ func chain_rank():
 func thunder_rank():
 	return progression.rank_of('thunderbeat')
 
+func barb_rank():
+	return progression.rank_of('barb_shot')
+
+func bramble_rank():
+	return progression.rank_of('bramble_trail')
+
 # --- Section initialization (issue #24) ---
 
 func _init_section():
@@ -376,6 +409,10 @@ func _init_section():
 	spawn_queue.clear()
 	storm_shots.clear()
 	storm_encounter_index = 0
+	thorn_shots.clear()
+	thorn_encounter_index = 0
+	barb_shots.clear()
+	bramble_patches.clear()
 	secondary_cues.clear()
 
 func _restore_section_state():
@@ -401,6 +438,9 @@ func _restore_section_state():
 func _update_room():
 	# Map player position to the current room for encounter spawning.
 	var px = player.position.x
+	if px >= EMBER_ROOM_BOUNDS['thorn1']['left']:
+		room = 'thorn2' if px >= EMBER_ROOM_BOUNDS['thorn2']['left'] else 'thorn1'
+		return
 	if px >= EMBER_ROOM_BOUNDS['storm1']['left']:
 		room = 'storm2' if px >= EMBER_ROOM_BOUNDS['storm2']['left'] else 'storm1'
 		return
@@ -578,6 +618,24 @@ func _spawn_storm_encounters():
 			break
 		add_enemy(encounter['x'], encounter['medium'], Tuning.SECTION_STORM)
 		storm_encounter_index += 1
+		active += 1
+
+func _spawn_thorn_encounters():
+	if not room.begins_with('thorn'):
+		return
+	var active := 0
+	for enemy in enemies:
+		if enemy.element == Tuning.SECTION_THORN:
+			active += 1
+	while thorn_encounter_index < THORN_ROUTE_ENCOUNTERS.size() and active < Tuning.MAX_ACTIVE_THREATS_PER_ROOM:
+		var encounter = THORN_ROUTE_ENCOUNTERS[thorn_encounter_index]
+		if encounter['room'] != room:
+			if room == 'thorn2':
+				thorn_encounter_index += 1
+				continue
+			break
+		add_enemy(encounter['x'], encounter['medium'], Tuning.SECTION_THORN)
+		thorn_encounter_index += 1
 		active += 1
 
 func add_enemy(x, medium, element = Tuning.SECTION_EMBER):
@@ -776,6 +834,84 @@ func _process_storm_enemy(enemy: Dictionary, delta: float) -> void:
 			if enemy.timer <= 0:
 				enemy.mode = 'approach'
 
+func _process_thorn_enemy(enemy: Dictionary, delta: float) -> void:
+	var difference: float = player.position.x - enemy.x
+	match enemy.mode:
+		'approach':
+			if absf(difference) < Tuning.THORN_TRIGGER_RANGE:
+				enemy.dir = signf(difference) if difference != 0 else 1.0
+				enemy.aim = (player.position - Vector2(0, 22) - Vector2(enemy.x, Tuning.THORN_SHOT_HEIGHT)).normalized()
+				enemy.mode = 'warn'
+				enemy.timer = Tuning.THORN_MEDIUM_WARN if enemy.medium else Tuning.THORN_EASY_WARN
+			elif absf(difference) < Tuning.ENEMY_LEASH_RANGE:
+				enemy.x += signf(difference) * Tuning.EASY_APPROACH_SPEED * delta
+		'warn':
+			if enemy.timer <= 0:
+				var count: int = Tuning.THORN_FAN_COUNT if enemy.medium else 1
+				for i in range(count):
+					var angle: float = (float(i) - float(count - 1) * 0.5) * Tuning.THORN_FAN_ANGLE
+					thorn_shots.append({'position': Vector2(enemy.x, Tuning.THORN_SHOT_HEIGHT), 'velocity': enemy.aim.rotated(angle) * Tuning.THORN_SHOT_SPEED, 'timer': Tuning.THORN_SHOT_LIFETIME})
+				enemy.mode = 'recover'
+				enemy.timer = Tuning.THORN_MEDIUM_RECOVER if enemy.medium else Tuning.THORN_EASY_RECOVER
+		'recover':
+			if enemy.timer <= 0:
+				enemy.mode = 'approach'
+
+func _process_thorn_shots(delta: float) -> void:
+	var living: Array = []
+	for shot in thorn_shots:
+		shot.position += shot.velocity * delta
+		shot.timer -= delta
+		if shot.timer > 0 and shot.position.distance_to(player.position - Vector2(0, 22)) < Tuning.THORN_SHOT_RADIUS:
+			if player.invulnerable <= 0 and player.dash_left <= 0:
+				hp -= Tuning.THORN_SHOT_DAMAGE
+				player.invulnerable = Tuning.INVULNERABLE_DURATION
+				player.velocity.y = Tuning.HIT_LAUNCH_Y
+				if hp > 0 and is_instance_valid(player.visual):
+					player.visual.play_hurt()
+				note('Thorn shot! Dodge the warning, then punish recovery.')
+			continue
+		if shot.timer > 0:
+			living.append(shot)
+	thorn_shots = living
+
+func _spawn_player_effects() -> void:
+	if barb_rank() > 0 and player.attack_id > last_barb_attack:
+		last_barb_attack = player.attack_id
+		barb_shots.append({'position': Vector2(player.position.x + player.facing * Tuning.BARB_SPAWN_OFFSET, Tuning.BARB_HEIGHT), 'direction': player.facing, 'timer': Tuning.BARB_LIFETIME, 'hits': []})
+	if bramble_rank() > 0 and player.dash_id > last_bramble_dash:
+		last_bramble_dash = player.dash_id
+		last_bramble_x = player.position.x
+		bramble_patches.append({'x': player.position.x, 'timer': Tuning.BRAMBLE_LIFETIME, 'hits': []})
+	if bramble_rank() > 0 and player.dash_left > 0 and absf(player.position.x - last_bramble_x) >= Tuning.BRAMBLE_SPACING:
+		last_bramble_x = player.position.x
+		bramble_patches.append({'x': player.position.x, 'timer': Tuning.BRAMBLE_LIFETIME, 'hits': []})
+
+func _process_player_effects(delta: float) -> void:
+	var living_barbs: Array = []
+	for shot in barb_shots:
+		shot.position.x += shot.direction * Tuning.BARB_SPEED * delta
+		shot.timer -= delta
+		if shot.timer <= 0:
+			continue
+		for enemy in enemies:
+			if enemy.hp > 0 and not shot.hits.has(enemy) and absf(enemy.x - shot.position.x) <= Tuning.BARB_RADIUS:
+				_secondary_damage(enemy, Tuning.barb_damage(barb_rank()))
+				shot.hits.append(enemy)
+		living_barbs.append(shot)
+	barb_shots = living_barbs
+	var living_patches: Array = []
+	for patch in bramble_patches:
+		patch.timer -= delta
+		if patch.timer <= 0:
+			continue
+		for enemy in enemies:
+			if enemy.hp > 0 and not patch.hits.has(enemy) and absf(enemy.x - patch.x) <= Tuning.BRAMBLE_RADIUS:
+				_secondary_damage(enemy, Tuning.bramble_damage(bramble_rank()))
+				patch.hits.append(enemy)
+		living_patches.append(patch)
+	bramble_patches = living_patches
+
 func _secondary_damage(enemy: Dictionary, amount: float) -> void:
 	# Deliberately bypass swipe-hit handling: secondary effects cannot chain or ignite.
 	enemy.hp -= amount
@@ -834,7 +970,7 @@ func _physics_process(delta):
 		choice.show()
 		return
 	# Spawn route encounters when the room is clear.
-	if enemies.is_empty() and not route_cleared and not miniboss_spawned and not room.begins_with('storm'):
+	if enemies.is_empty() and not route_cleared and not miniboss_spawned and not room.begins_with('storm') and not room.begins_with('thorn'):
 		encounter_wait -= delta
 		if encounter_wait <= 0:
 			_spawn_room_encounters()
@@ -843,6 +979,11 @@ func _physics_process(delta):
 		encounter_wait -= delta
 		if encounter_wait <= 0:
 			_spawn_storm_encounters()
+			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
+	if room.begins_with('thorn') and enemies.is_empty():
+		encounter_wait -= delta
+		if encounter_wait <= 0:
+			_spawn_thorn_encounters()
 			encounter_wait = Tuning.WAVE_WAIT_AFTER_KILL
 	# Spawn miniboss after route is cleared.
 	if not miniboss_defeated and not miniboss_spawned:
@@ -853,6 +994,8 @@ func _physics_process(delta):
 	# Process fire waves.
 	_process_fire_waves(delta)
 	_process_storm_shots(delta)
+	_process_thorn_shots(delta)
+	_spawn_player_effects()
 	_pulse_if_due()
 	for cue in secondary_cues:
 		cue.timer -= delta
@@ -863,6 +1006,8 @@ func _physics_process(delta):
 		enemy.timer -= delta
 		if enemy.element == Tuning.SECTION_STORM:
 			_process_storm_enemy(enemy, delta)
+		elif enemy.element == Tuning.SECTION_THORN:
+			_process_thorn_enemy(enemy, delta)
 		elif enemy.mode == 'approach':
 			if absf(difference) < Tuning.EASY_TRIGGER_RANGE and player.position.y > 250:
 				enemy.mode = 'warn'
@@ -885,6 +1030,8 @@ func _physics_process(delta):
 		var bounds = EMBER_ROOM_BOUNDS.get(room, {'left': Tuning.ENEMY_MIN_X, 'right': Tuning.ENEMY_MAX_X})
 		if enemy.element == Tuning.SECTION_STORM:
 			bounds = {'left': Tuning.STORM_ENEMY_MIN_X, 'right': Tuning.STORM_ENEMY_MAX_X}
+		elif enemy.element == Tuning.SECTION_THORN:
+			bounds = {'left': Tuning.THORN_ENEMY_MIN_X, 'right': Tuning.THORN_ENEMY_MAX_X}
 		enemy.x = clampf(enemy.x, bounds['left'], bounds['right'])
 		var reach = Tuning.swipe_reach(arc_rank())
 		var relative = enemy.x - player.position.x
@@ -909,7 +1056,8 @@ func _physics_process(delta):
 			player.velocity.y = Tuning.HIT_LAUNCH_Y
 			if hp > 0 and is_instance_valid(player.visual):
 				player.visual.play_hurt()
-			note('Hit! Watch the warning, then punish the recovery.')
+				note('Hit! Watch the warning, then punish the recovery.')
+	_process_player_effects(delta)
 	var living = []
 	for enemy in enemies:
 		if enemy.hp <= 0:
@@ -943,6 +1091,10 @@ func path_label(path_id, slot):
 		return '%s · %s  rank %d → %d\nArc reach %d · damage %.1f' % [key, info['name'], rank, rank + 1, int(Tuning.chain_reach(rank + 1)), Tuning.chain_damage(rank + 1)]
 	if path_id == 'thunderbeat':
 		return '%s · %s  rank %d → %d\nEvery %d swipes · radius %d · damage %.1f' % [key, info['name'], rank, rank + 1, Tuning.THUNDERBEAT_EVERY_SWIPES, int(Tuning.thunderbeat_reach(rank + 1)), Tuning.thunderbeat_damage(rank + 1)]
+	if path_id == 'barb_shot':
+		return '%s · %s  rank %d → %d\nSwipe projectile · damage %.1f · %.1fs' % [key, info['name'], rank, rank + 1, Tuning.barb_damage(rank + 1), Tuning.BARB_LIFETIME]
+	if path_id == 'bramble_trail':
+		return '%s · %s  rank %d → %d\nDash patch · damage %.1f · %.1fs' % [key, info['name'], rank, rank + 1, Tuning.bramble_damage(rank + 1), Tuning.BRAMBLE_LIFETIME]
 	return '%s · %s  rank %d → %d\nSwipes reach farther (reach %d)' % [key, info['name'], rank, rank + 1, int(Tuning.swipe_reach(rank + 1))]
 
 func refresh_choice_panel():
@@ -975,6 +1127,7 @@ func refresh():
 	else:
 		hud.text = 'Health %.1f / %d   |   Claws r%d · Arc r%d (%d/%d)' % [hp, int(Tuning.PLAYER_MAX_HP), burn_rank(), arc_rank(), progression.selections, Progression.SELECTION_CAP]
 	hud.text += '   |   Chain r%d · Beat r%d' % [chain_rank(), thunder_rank()]
+	hud.text += '   |   Barb r%d · Bramble r%d' % [barb_rank(), bramble_rank()]
 	if session_only:
 		hud.text += '   |   Session-only (storage unavailable)'
 	hud.text += '   |   Room: %s' % room.capitalize()
@@ -1007,6 +1160,10 @@ func probe_section():
 		'fire_waves': fire_waves.size(),
 		'storm_shots': storm_shots.size(),
 		'storm_encounters': storm_encounter_index,
+		'thorn_shots': thorn_shots.size(),
+		'thorn_encounters': thorn_encounter_index,
+		'barb_shots': barb_shots.size(),
+		'bramble_patches': bramble_patches.size(),
 	}
 
 func _process(_delta):
@@ -1021,12 +1178,14 @@ func _process(_delta):
 			'selections': progression.selections, 'pending': progression.pending_level_ups(),
 			'dominant': progression.dominant_elements(), 'fully_evolved': progression.is_fully_evolved(),
 			'offer_kind': progression.session_offer()['kind'],
-			'ranks': {'searing_claws': burn_rank(), 'flame_arc': arc_rank(), 'chain_spark': chain_rank(), 'thunderbeat': thunder_rank()},
+			'ranks': {'searing_claws': burn_rank(), 'flame_arc': arc_rank(), 'chain_spark': chain_rank(), 'thunderbeat': thunder_rank(), 'barb_shot': barb_rank(), 'bramble_trail': bramble_rank()},
 			'burn_rank': burn_rank(), 'arc_rank': arc_rank(),
 			'swipe_reach': Tuning.swipe_reach(arc_rank()), 'burn_duration': Tuning.burn_duration(burn_rank()),
 			'chain_reach': Tuning.chain_reach(chain_rank()), 'chain_damage': Tuning.chain_damage(chain_rank()),
 			'thunderbeat_reach': Tuning.thunderbeat_reach(thunder_rank()), 'thunderbeat_damage': Tuning.thunderbeat_damage(thunder_rank()),
 			'storm_shots': storm_shots.size(), 'storm_encounters': storm_encounter_index,
+			'thorn_shots': thorn_shots.size(), 'thorn_encounters': thorn_encounter_index,
+			'barb_shots': barb_shots.size(), 'bramble_patches': bramble_patches.size(),
 			'wave': wave, 'kills': kills, 'deaths': deaths, 'retries': retries,
 			'checkpoint_id': active_checkpoint_id if active_checkpoint_id != '' else CHECKPOINT_ID, 'has_saved_run': not saved_run.is_empty(), 'session_only': session_only,
 			'x': player.position.x, 'y': player.position.y,
@@ -1045,7 +1204,7 @@ func _notification(what):
 
 func _draw():
 	# Camera: offset drawing based on player position for scrolling.
-	var cam_x = clampf(player.position.x - 320, 0, 3600 - 640)
+	var cam_x = clampf(player.position.x - 320, 0, 4800 - 640)
 	ember_art.environment(self, cam_x, platforms)
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_ENTRY_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_PREBOSS_POS + Vector2(-cam_x, 1))
@@ -1064,11 +1223,19 @@ func _draw():
 		ember_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x,300), enemy.dir, enemy.mode, enemy.flash > 0, clock)
 		if enemy.element == Tuning.SECTION_STORM:
 			draw_circle(Vector2(x, 272 - h), 5, Color('#8bd7f7'))
-		draw_line(Vector2(x - w, 265 - h), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, 265 - h), Color('#8bd7f7') if enemy.element == Tuning.SECTION_STORM else Color('#c87f55'), 2)
+		elif enemy.element == Tuning.SECTION_THORN:
+			draw_circle(Vector2(x, 272 - h), 5, Color('#92cf79'))
+		var health_color = Color('#8bd7f7') if enemy.element == Tuning.SECTION_STORM else (Color('#92cf79') if enemy.element == Tuning.SECTION_THORN else Color('#c87f55'))
+		draw_line(Vector2(x - w, 265 - h), Vector2(x - w + 2 * w * enemy.hp / enemy.max_hp, 265 - h), health_color, 2)
 		if enemy.mode == 'warn':
 			if enemy.element == Tuning.SECTION_STORM:
 				var direction: Vector2 = enemy.aim if enemy.medium else Vector2(enemy.dir, 0)
 				draw_line(Vector2(x, Tuning.STORM_SHOT_HEIGHT), Vector2(x, Tuning.STORM_SHOT_HEIGHT) + direction * 115, Color('#8bd7f7'), 2)
+			elif enemy.element == Tuning.SECTION_THORN:
+				for i in range(Tuning.THORN_FAN_COUNT if enemy.medium else 1):
+					var count: int = Tuning.THORN_FAN_COUNT if enemy.medium else 1
+					var angle: float = (float(i) - float(count - 1) * 0.5) * Tuning.THORN_FAN_ANGLE
+					draw_line(Vector2(x, Tuning.THORN_SHOT_HEIGHT), Vector2(x, Tuning.THORN_SHOT_HEIGHT) + enemy.aim.rotated(angle) * 100, Color('#92cf79'), 2)
 			else:
 				draw_line(Vector2(x, 297), Vector2(x + enemy.dir * (64 if enemy.medium else 40), 297), Color('#ffb859'), 2)
 			draw_rect(Rect2(x - 2, 268 - h, 4, 7), Color('#ffe3a0'))
@@ -1078,6 +1245,12 @@ func _draw():
 			draw_colored_polygon(PackedVector2Array([Vector2(x - 4, 275 - h), Vector2(x, 263 - h), Vector2(x + 4, 275 - h)]), Color('#ff8b35'))
 	for shot in storm_shots:
 		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#8bd7f7'))
+	for shot in thorn_shots:
+		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#92cf79'))
+	for shot in barb_shots:
+		draw_circle(shot.position - Vector2(cam_x, 0), 5, Color('#d5f39b'))
+	for patch in bramble_patches:
+		draw_arc(Vector2(patch.x - cam_x, Tuning.BRAMBLE_HEIGHT), Tuning.BRAMBLE_RADIUS, PI, TAU, 12, Color('#709c5a'), 3)
 	for cue in secondary_cues:
 		if cue.pulse:
 			draw_arc(Vector2(cue['from'] - cam_x, 278), cue['to'], PI, TAU, 28, Color('#8bd7f7'), 3)

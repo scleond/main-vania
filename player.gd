@@ -13,6 +13,7 @@ var dash_wait=0.0
 var attack_left=0.0
 var attack_wait=0.0
 var attack_id=0
+var dash_id=0
 var invulnerable=0.0
 var clock=0.0
 var coyote=0.0
@@ -53,6 +54,7 @@ func _physics_process(delta):
  if Input.is_action_just_pressed('dash') and dash_wait<=0:
   dash_left=Tuning.DASH_DURATION
   dash_wait=Tuning.DASH_COOLDOWN
+  dash_id+=1
  if Input.is_action_just_pressed('attack') and attack_wait<=0 and dash_left<=0:
   attack_left=Tuning.SWIPE_DURATION
   attack_wait=Tuning.SWIPE_COOLDOWN

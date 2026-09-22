@@ -19,7 +19,7 @@ const GRAVITY := 850.0
 const COYOTE_DURATION := 0.1
 const JUMP_BUFFER_DURATION := 0.1
 const ROOM_LEFT_BOUND := 15.0
-const ROOM_RIGHT_BOUND := 3550.0
+const ROOM_RIGHT_BOUND := 4710.0
 const PLAYER_MAX_HP := 6.0
 const INVULNERABLE_DURATION := 0.95
 const HIT_LAUNCH_Y := -135.0
@@ -136,6 +136,43 @@ const THUNDERBEAT_REACH_PER_RANK := 12.0
 const THUNDERBEAT_BASE_DAMAGE := 1.0
 const THUNDERBEAT_DAMAGE_PER_RANK := 0.5
 const SECONDARY_CUE_DURATION := 0.22
+
+# Thorn ranged foes and earned secondary effects. All timers and hit spacing
+# are gameplay values, independent of presentation frames.
+const SECTION_THORN := 'thorn'
+const THORN_ENEMY_MIN_X := 3580.0
+const THORN_ENEMY_MAX_X := 4710.0
+const THORN_TRIGGER_RANGE := 225.0
+const THORN_EASY_WARN := 0.8
+const THORN_MEDIUM_WARN := 1.05
+const THORN_EASY_RECOVER := 1.0
+const THORN_MEDIUM_RECOVER := 1.4
+const THORN_SHOT_SPEED := 175.0
+const THORN_SHOT_LIFETIME := 2.2
+const THORN_SHOT_DAMAGE := 1.0
+const THORN_SHOT_RADIUS := 11.0
+const THORN_SHOT_HEIGHT := 276.0
+const THORN_FAN_COUNT := 3
+const THORN_FAN_ANGLE := 0.19
+const BARB_SPEED := 290.0
+const BARB_LIFETIME := 0.9
+const BARB_RADIUS := 13.0
+const BARB_BASE_DAMAGE := 1.0
+const BARB_DAMAGE_PER_RANK := 0.5
+const BARB_SPAWN_OFFSET := 24.0
+const BARB_HEIGHT := 279.0
+const BRAMBLE_LIFETIME := 1.1
+const BRAMBLE_RADIUS := 33.0
+const BRAMBLE_BASE_DAMAGE := 1.0
+const BRAMBLE_DAMAGE_PER_RANK := 0.5
+const BRAMBLE_SPACING := 34.0
+const BRAMBLE_HEIGHT := 295.0
+
+static func barb_damage(rank: int) -> float:
+	return BARB_BASE_DAMAGE + BARB_DAMAGE_PER_RANK * float(maxi(rank - 1, 0))
+
+static func bramble_damage(rank: int) -> float:
+	return BRAMBLE_BASE_DAMAGE + BRAMBLE_DAMAGE_PER_RANK * float(maxi(rank - 1, 0))
 
 static func chain_reach(rank: int) -> float:
 	return CHAIN_BASE_REACH + CHAIN_REACH_PER_RANK * float(maxi(rank - 1, 0))

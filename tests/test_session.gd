@@ -167,6 +167,70 @@ func _initialize():
 	m.progression.earn('ember', 2)
 	check('post-cap souls rest', m.progression.window_total() == frozen, str(m.progression.window_total()))
 
+	# --- Thorn route, both earned paths, and saved retry with an Ember build ---
+	m.start_run()
+	m.player.position = Vector2(3650, 299)
+	m.add_enemy(3700.0, false, 'thorn')
+	m.add_enemy(3750.0, true, 'thorn')
+	m.player.invulnerable = 999.0
+	step(m, 0.05)
+	check('Thorn easy and medium warn', m.enemies[0].mode == 'warn' and m.enemies[1].mode == 'warn', str(m.probe_enemies()))
+	m.enemies[0].timer = 0.0
+	m.enemies[1].timer = 0.0
+	m._process_thorn_enemy(m.enemies[0], 0.01)
+	m._process_thorn_enemy(m.enemies[1], 0.01)
+	check('Thorn easy single and medium three shot fan', m.thorn_shots.size() == 4, str(m.thorn_shots.size()))
+	check('Thorn enemies recover after shots', m.enemies[0].mode == 'recover' and m.enemies[1].mode == 'recover', str(m.probe_enemies()))
+	m.enemies[0].hp = 0.0
+	m.enemies[1].hp = 0.0
+	step(m, 0.05)
+	check('Thorn kills grant native easy and medium Numen', m.progression.window_counts()['thorn'] == Tuning.EASY_NUMEN + Tuning.MEDIUM_NUMEN, str(m.progression.window_counts()))
+	m.start_run()
+	m.enemies.clear()
+	m.thorn_shots.clear()
+	m.player.position = Vector2(70, 299)
+	for i in range(8):
+		m.progression.earn('ember', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	m.apply_path_choice('searing_claws')
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('thorn', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	check('Thorn offer follows earned Numen', m.choosing and m.progression.session_offer().get('element') == 'thorn', str(m.progression.session_offer()))
+	m.apply_path_choice('barb_shot')
+	check('Barb Shot joins Ember build', m.barb_rank() == 1 and m.burn_rank() == 1, str(m.progression.ranks))
+	m.player.attack_id += 1
+	m._spawn_player_effects()
+	check('swipe launches one Barb Shot', m.barb_shots.size() == 1, str(m.barb_shots.size()))
+	m.add_enemy(120.0, false, 'thorn')
+	m._process_player_effects(0.05)
+	check('Barb Shot deals tuned damage', m.enemies[0].hp == Tuning.EASY_HP - Tuning.barb_damage(1), str(m.enemies[0].hp))
+	m.enemies.clear()
+	m._process_player_effects(Tuning.BARB_LIFETIME + 0.01)
+	check('Barb Shot expires by tuned lifetime', m.barb_shots.is_empty(), str(m.barb_shots.size()))
+	for i in range(m.progression.window_requirement()):
+		m.progression.earn('thorn', 1)
+	m.choice_delay = 0.0
+	step(m, 0.05)
+	m.apply_path_choice('bramble_trail')
+	m.player.dash_id += 1
+	m._spawn_player_effects()
+	check('dash leaves Bramble Trail patch', m.bramble_rank() == 1 and m.bramble_patches.size() == 1, str(m.bramble_patches.size()))
+	m.add_enemy(m.player.position.x + 8, false, 'thorn')
+	m._process_player_effects(0.05)
+	check('Bramble patch deals damage once per enemy', m.enemies[0].hp == Tuning.EASY_HP - Tuning.bramble_damage(1), str(m.enemies[0].hp))
+	m._process_player_effects(0.05)
+	check('Bramble patch does not retrigger', m.enemies[0].hp == Tuning.EASY_HP - Tuning.bramble_damage(1), str(m.enemies[0].hp))
+	m.enemies.clear()
+	m._process_player_effects(Tuning.BRAMBLE_LIFETIME + 0.01)
+	check('Bramble patch expires by tuned lifetime', m.bramble_patches.is_empty(), str(m.bramble_patches.size()))
+	m.respawn(false)
+	check('retry retains both Thorn ranks', m.barb_rank() == 1 and m.bramble_rank() == 1, str(m.progression.ranks))
+	m.continue_run()
+	check('Continue restores Ember and both Thorn ranks', m.burn_rank() == 1 and m.barb_rank() == 1 and m.bramble_rank() == 1, str(m.progression.ranks))
+
 	print('---')
 	print('checks: %d failures: %d' % [checks, failures])
 	if failures > 0:
