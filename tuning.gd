@@ -405,3 +405,49 @@ static func lunge_speed(medium: bool) -> float:
 
 static func recover_duration(medium: bool) -> float:
 	return MEDIUM_RECOVER_DURATION if medium else EASY_RECOVER_DURATION
+
+
+# --- World connections and shrine influence (issue #40) ---
+# Sanctuary hub connects to all five sections.
+const SANCTUARY_LEFT := 2000.0
+const SANCTUARY_RIGHT := 2400.0
+const SANCTUARY_GROUND_Y := 300.0
+# Guardian location beneath the sanctuary; unlocked when all 5 shrines are awakened.
+const GUARDIAN_LEFT := 2100.0
+const GUARDIAN_RIGHT := 2300.0
+const GUARDIAN_GROUND_Y := 350.0
+const CHECKPOINT_GUARDIAN := 'guardian_entry'
+# Section adjacency map: each section connects to the sanctuary and its neighbors.
+const SECTION_CONNECTIONS: Dictionary = {
+	'ember': ['sanctuary', 'storm'],
+	'storm': ['sanctuary', 'ember', 'thorn'],
+	'thorn': ['sanctuary', 'storm', 'stone'],
+	'stone': ['sanctuary', 'thorn', 'wind'],
+	'wind': ['sanctuary', 'stone'],
+}
+# Influence sites: two per shrine outside its home section. Each site has a
+# position, effect type, and effect-specific parameters. All are independently
+# editable without touching gameplay logic.
+const INFLUENCE_SITES: Array = [
+	# Ember shrines influence Storm: timed vents that damage enemies periodically.
+	{'id': 'ember_vent_1', 'shrine': SHRINE_EMBER, 'section': SECTION_STORM, 'x': 2520.0, 'effect': 'vent', 'radius': 60.0, 'damage': 1.0, 'interval': 2.8, 'active_time': 0.6},
+	{'id': 'ember_vent_2', 'shrine': SHRINE_EMBER, 'section': SECTION_STORM, 'x': 3100.0, 'effect': 'vent', 'radius': 60.0, 'damage': 1.0, 'interval': 3.4, 'active_time': 0.6},
+	# Storm shrines influence Thorn: strikeable conductive bursts.
+	{'id': 'storm_burst_1', 'shrine': SHRINE_STORM, 'section': SECTION_THORN, 'x': 3700.0, 'effect': 'burst', 'radius': 80.0, 'damage': 2.0, 'strike_reach': 50.0},
+	{'id': 'storm_burst_2', 'shrine': SHRINE_STORM, 'section': SECTION_THORN, 'x': 4350.0, 'effect': 'burst', 'radius': 80.0, 'damage': 2.0, 'strike_reach': 50.0},
+	# Thorn shrines influence Stone: bounce plants that launch the player.
+	{'id': 'thorn_bounce_1', 'shrine': SHRINE_THORN, 'section': SECTION_STONE, 'x': 4950.0, 'effect': 'bounce', 'bounce_speed': -380.0, 'reach': 30.0},
+	{'id': 'thorn_bounce_2', 'shrine': SHRINE_THORN, 'section': SECTION_STONE, 'x': 5450.0, 'effect': 'bounce', 'bounce_speed': -380.0, 'reach': 30.0},
+	# Stone shrines influence Wind: cover blocks and stepping platforms.
+	{'id': 'stone_cover_1', 'shrine': SHRINE_STONE, 'section': SECTION_WIND, 'x': 6200.0, 'effect': 'cover', 'width': 40.0, 'height': 50.0, 'projectile_block': true},
+	{'id': 'stone_cover_2', 'shrine': SHRINE_STONE, 'section': SECTION_WIND, 'x': 6700.0, 'effect': 'cover', 'width': 40.0, 'height': 50.0, 'projectile_block': true},
+	# Wind shrines influence Ember: updraft columns that lift the player.
+	{'id': 'wind_updraft_1', 'shrine': SHRINE_WIND, 'section': SECTION_EMBER, 'x': 800.0, 'effect': 'updraft', 'force': -280.0, 'width': 50.0, 'height': 200.0},
+	{'id': 'wind_updraft_2', 'shrine': SHRINE_WIND, 'section': SECTION_EMBER, 'x': 1400.0, 'effect': 'updraft', 'force': -280.0, 'width': 50.0, 'height': 200.0},
+]
+# Shrine influence pulse: emitted on awakening to highlight map changes.
+const SHRINE_PULSE_DURATION := 2.5
+const SHRINE_PULSE_RADIUS := 350.0
+# Neighbor visitor spawning near section connections.
+const VISITOR_SPAWN_RANGE := 120.0
+const VISITOR_MAX := 2
