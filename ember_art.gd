@@ -26,15 +26,19 @@ func environment(canvas: CanvasItem, camera: float, platforms: Array):
 		stamp(canvas, decoration.asset, Vector2(decoration.x-camera, decoration.y))
 	for platform in platforms:
 		var rect = Rect2(platform.position-Vector2(camera,0), platform.size)
-		canvas.draw_rect(rect, Color(look.palette.stone))
-		# The first opaque row is the real landing surface, including thin ledges.
-		canvas.draw_rect(Rect2(rect.position, Vector2(rect.size.x,2)), Color(look.palette.edge))
-		for x in range(0, int(rect.size.x), 24):
-			canvas.draw_line(rect.position+Vector2(x,3), rect.position+Vector2(x,rect.size.y), Color(look.palette.joint))
-		if rect.size.y > 20:
-			for x in range(16, int(rect.size.x)-10, 96):
-				var at = rect.position+Vector2(x,12)
-				canvas.draw_polyline(PackedVector2Array([at,at+Vector2(7,7),at+Vector2(4,13),at+Vector2(12,19)]), Color(look.palette.crack),1)
+		masonry(canvas, rect, look.palette)
+
+# Shared sanctuary construction; section treatments supply only a palette.
+func masonry(canvas: CanvasItem, rect: Rect2, palette: Dictionary):
+	canvas.draw_rect(rect, Color(palette.stone))
+	# The first opaque row is the real landing surface, including thin ledges.
+	canvas.draw_rect(Rect2(rect.position, Vector2(rect.size.x,2)), Color(palette.edge))
+	for x in range(0, int(rect.size.x), 24):
+		canvas.draw_line(rect.position+Vector2(x,3), rect.position+Vector2(x,rect.size.y), Color(palette.joint))
+	if rect.size.y > 20:
+		for x in range(16, int(rect.size.x)-10, 96):
+			var at = rect.position+Vector2(x,12)
+			canvas.draw_polyline(PackedVector2Array([at,at+Vector2(7,7),at+Vector2(4,13),at+Vector2(12,19)]), Color(palette.crack),1)
 
 func creature(canvas: CanvasItem, kind: String, feet: Vector2, facing: float, state: String, flash: bool, seconds: float):
 	var size = look.creatures[kind].size

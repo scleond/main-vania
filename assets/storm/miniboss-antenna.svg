@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- One focal feature: a tall open diamond crown, split around a spark gap. -->
+  <path fill="#152330" d="M26 30L13 19V14L27 4H30V9L20 17 30 25V32ZM34 32V25L44 17 34 9V4H38L51 14V19L38 30Z"/>
+  <path fill="#77a8bb" d="M27 28L16 18V15L28 6V9L19 16V18L28 26ZM36 28V26L46 18V16L36 9V6L48 15V18Z"/>
+  <path fill="#d0edf1" d="M25 6H29V10H25ZM35 6H39V10H35ZM14 15H19V18H14ZM46 15H50V18H46Z"/>
+  <path fill="#445e76" d="M28 27H36V33H28Z"/>
+</svg>

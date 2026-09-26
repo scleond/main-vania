@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- Doubled tuning forks distinguish the aimed-shot relative. -->
+  <path fill="#152330" d="M21 37V30L15 26V20H20V24L25 28V37ZM32 35V27L38 21H44V26H40L37 29V36ZM38 38V30L46 26H50V31H47L43 33V39Z"/>
+  <path fill="#8dbaca" d="M18 22V25L23 29V35H21V30L16 27V22ZM34 35V28L40 23H43V25H40L36 29V35ZM40 37V31L47 28H49V30L42 33V37Z"/>
+  <path fill="#ccecf0" d="M14 21H20V24H14ZM39 21H45V24H39ZM46 26H51V29H46Z"/>
+</svg>

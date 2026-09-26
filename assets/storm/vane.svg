@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="88" viewBox="0 0 40 88" shape-rendering="crispEdges">
+  <!-- Signature decoration 1: a broken directional vane. -->
+  <path fill="#243443" d="M17 88V29H13V24H17V5H21V24H36V29H21V88Z"/>
+  <path fill="#526772" d="M3 24L13 15V22H30V17L39 26 30 34V28H13V34Z"/>
+  <path fill="#78918e" d="M17 0H21V10H17ZM4 23H12V26H4ZM29 24H34V27H29Z"/>
+  <path fill="#344b59" d="M10 46H28V49H10ZM13 52H25V55H13ZM12 81H27V88H12Z"/>
+</svg>

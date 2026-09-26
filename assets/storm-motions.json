@@ -1,0 +1,29 @@
+{
+  "poses": {
+    "rest": {"body": [0, 0], "antenna": [0, 0], "stride": 0, "charge": 0, "scale_y": 1, "alpha": 1},
+    "breathe": {"body": [0, -1], "antenna": [0, -1], "stride": 0, "charge": 0, "scale_y": 1, "alpha": 1},
+    "step_a": {"body": [0, -1], "antenna": [-1, -1], "stride": 2, "charge": 0, "scale_y": 1, "alpha": 1},
+    "step_b": {"body": [0, 0], "antenna": [0, 0], "stride": -2, "charge": 0, "scale_y": 1, "alpha": 1},
+    "brace": {"body": [-1, 0], "antenna": [1, 0], "stride": -1, "charge": 1, "scale_y": 1, "alpha": 1},
+    "charged": {"body": [-1, 0], "antenna": [1, -1], "stride": -1, "charge": 2, "scale_y": 1, "alpha": 1},
+    "discharge": {"body": [-2, 0], "antenna": [-2, 1], "stride": -1, "charge": 3, "scale_y": 1, "alpha": 1},
+    "recoil": {"body": [-1, 1], "antenna": [-1, 2], "stride": 1, "charge": 0, "scale_y": 1, "alpha": 1},
+    "cool": {"body": [0, 1], "antenna": [0, 2], "stride": 0, "charge": 0, "scale_y": 1, "alpha": 1},
+    "break": {"body": [0, 1], "antenna": [-3, 3], "stride": 2, "charge": 1, "scale_y": 0.85, "alpha": 1},
+    "collapse": {"body": [0, 0], "antenna": [-5, 5], "stride": 3, "charge": 0, "scale_y": 0.45, "alpha": 0.7},
+    "fade": {"body": [0, 0], "antenna": [-7, 7], "stride": 3, "charge": 0, "scale_y": 0.2, "alpha": 0.25},
+    "gone": {"body": [0, 0], "antenna": [0, 0], "stride": 0, "charge": 0, "scale_y": 0.2, "alpha": 0}
+  },
+  "states": {
+    "idle": {"fps": 4, "loop": true, "frames": ["rest", "rest", "breathe", "rest"]},
+    "approach": {"fps": 8, "loop": true, "frames": ["step_a", "rest", "step_b", "rest"]},
+    "relocate": {"fps": 12, "loop": true, "frames": ["step_b", "step_a", "rest", "step_a"]},
+    "warn": {"fps": 8, "loop": true, "frames": ["brace", "charged"]},
+    "warn_lightning": {"fps": 6, "loop": true, "frames": ["brace", "charged", "charged"]},
+    "attack": {"fps": 8, "loop": false, "frames": ["discharge", "recoil", "cool"]},
+    "lightning": {"fps": 10, "loop": true, "frames": ["discharge", "charged"]},
+    "recover": {"fps": 8, "loop": false, "frames": ["discharge", "recoil", "cool", "cool", "rest"]},
+    "boss_recover": {"fps": 6, "loop": false, "frames": ["cool", "cool", "rest"]},
+    "defeat": {"fps": 8, "loop": false, "frames": ["break", "collapse", "collapse", "fade", "fade", "gone"]}
+  }
+}

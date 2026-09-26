@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="86" viewBox="0 0 64 86" shape-rendering="crispEdges">
+  <!-- Signature decoration 3: a grounded lightning harp with snapped strings. -->
+  <path fill="#23323f" d="M4 86V76H9V16L16 6H23V0H41V6H49L55 16V76H60V86ZM18 19V70H46V19L39 13H25Z" fill-rule="evenodd"/>
+  <path fill="#50626b" d="M12 18H17V71H12ZM47 18H52V71H47ZM11 73H53V78H11ZM22 7H42V11H22Z"/>
+  <path fill="#3d5965" d="M23 18H25V66H23ZM30 15H32V42H30L34 49H32L28 43H30ZM38 18H40V67H38Z"/>
+  <path fill="#6c807e" d="M23 57H25V61H23ZM38 28H40V33H38ZM26 80H38V83H26Z"/>
+</svg>

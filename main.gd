@@ -9,6 +9,7 @@ const Tuning = preload('res://tuning.gd')
 const Progression = preload('res://progression.gd')
 const RunSave = preload('res://run_save.gd')
 var ember_art = preload('res://ember_art.gd').new()
+var storm_art = preload('res://storm_art.gd').new()
 const CHECKPOINT_POSITION = Vector2(70, 299)
 const CHECKPOINT_ID := 'ember_trial_entry'
 const PATH_IDS := ['searing_claws', 'flame_arc']
@@ -504,6 +505,7 @@ func respawn(count = true):
 	player.dash_wait = 0.0
 	player.air_jump_used = false
 	particles.clear()
+	storm_art.clear()
 	enemies.clear()
 	fire_waves.clear()
 	encounter_index = 0
@@ -606,6 +608,7 @@ func reprisal_rank():
 # --- Section initialization (issue #24) ---
 
 func _init_section():
+	storm_art.clear()
 	room = 'entry'
 	miniboss_defeated = false
 	shrine_awakened = false
@@ -1515,6 +1518,7 @@ func _process_storm_miniboss(delta: float) -> void:
 		storm_miniboss.hp -= Tuning.SWIPE_DAMAGE
 		storm_miniboss.flash = Tuning.ENEMY_HIT_FLASH
 	if storm_miniboss.hp <= 0:
+		storm_art.defeat('miniboss', Vector2(storm_miniboss.x, 300), -1.0, clock)
 		storm_miniboss_defeated = true
 		storm_miniboss = {}
 		progression.earn(Tuning.SECTION_STORM, Tuning.STORM_BOSS_NUMEN)
@@ -2705,6 +2709,7 @@ func _physics_process(delta):
 			kills += 1
 			section_kills += 1
 			if enemy.element == Tuning.SECTION_STORM:
+				storm_art.defeat('medium' if enemy.medium else 'easy', Vector2(enemy.x, 300), enemy.dir, clock)
 				storm_route_kills += 1
 			elif enemy.element == Tuning.SECTION_THORN:
 				thorn_route_kills += 1
@@ -2940,6 +2945,8 @@ func _draw():
 	# Camera: offset drawing based on player position for scrolling.
 	var cam_x = clampf(player.position.x - 320, 0, 7200 - 640)
 	ember_art.environment(self, cam_x, platforms)
+	storm_art.environment(self, cam_x, platforms, ember_art)
+	storm_art.draw_remnants(self, cam_x, clock)
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_ENTRY_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_EMBER_PREBOSS_POS + Vector2(-cam_x, 1))
 	ember_art.stamp(self, 'checkpoint', CHECKPOINT_STORM_ENTRY_POS + Vector2(-cam_x, 1))
@@ -2974,10 +2981,16 @@ func _draw():
 		var x = enemy.x - cam_x
 		var w = 19 if enemy.medium else 13
 		var h = 28 if enemy.medium else 19
-		ember_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x, enemy.y if enemy.element == Tuning.SECTION_WIND else 300), enemy.dir, 'lunge' if enemy.element == Tuning.SECTION_STONE and enemy.mode == 'swipe' else enemy.mode, enemy.flash > 0, clock)
 		if enemy.element == Tuning.SECTION_STORM:
-			draw_circle(Vector2(x, 272 - h), 5, Color('#8bd7f7'))
-		elif enemy.element == Tuning.SECTION_THORN:
+			var art_time = clock
+			if enemy.mode == 'warn':
+				art_time = (Tuning.STORM_MEDIUM_AIM_TIME if enemy.medium else Tuning.STORM_EASY_CHARGE) - enemy.timer
+			elif enemy.mode == 'recover':
+				art_time = (Tuning.STORM_MEDIUM_RECOVER if enemy.medium else Tuning.STORM_EASY_RECOVER) - enemy.timer
+			storm_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x, 300), enemy.dir, enemy.mode, enemy.flash > 0, art_time, _get_enemy_modifier(enemy))
+		else:
+			ember_art.creature(self, 'medium' if enemy.medium else 'easy', Vector2(x, enemy.y if enemy.element == Tuning.SECTION_WIND else 300), enemy.dir, 'lunge' if enemy.element == Tuning.SECTION_STONE and enemy.mode == 'swipe' else enemy.mode, enemy.flash > 0, clock)
+		if enemy.element == Tuning.SECTION_THORN:
 			draw_circle(Vector2(x, 272 - h), 5, Color('#92cf79'))
 		elif enemy.element == Tuning.SECTION_WIND:
 			draw_circle(Vector2(x, enemy.y - h), 5, Color('#a5e5cf'))
@@ -3073,7 +3086,9 @@ func _draw():
 	# Draw fire waves.
 	if not storm_miniboss.is_empty():
 		var sx = storm_miniboss.x - cam_x
-		ember_art.creature(self, 'miniboss', Vector2(sx, 300), -1.0, storm_miniboss.phase, storm_miniboss.flash > 0, clock)
+		var art_state = 'boss_recover' if storm_miniboss.phase == 'recover' else storm_miniboss.phase
+		var phase_duration = {'idle': Tuning.STORM_BOSS_IDLE, 'warn_lightning': Tuning.STORM_BOSS_WARN, 'lightning': Tuning.STORM_BOSS_ACTIVE, 'recover': Tuning.STORM_BOSS_RECOVER}.get(storm_miniboss.phase, 0.0)
+		storm_art.creature(self, 'miniboss', Vector2(sx, 300), -1.0, art_state, storm_miniboss.flash > 0, phase_duration - storm_miniboss.timer)
 		draw_line(Vector2(sx - 28, 215), Vector2(sx - 28 + 56 * storm_miniboss.hp / storm_miniboss.max_hp, 215), Color('#8bd7f7'), 3)
 		if storm_miniboss.phase == 'warn_lightning' or storm_miniboss.phase == 'lightning':
 			for lane in range(Tuning.STORM_BOSS_LANE_COUNT):

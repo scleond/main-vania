@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- Feet pivot 32,60; face points right. Antennae and feet are separate layers. -->
+  <path fill="#152330" d="M19 49L24 39H34L43 44 45 50 41 56H24Z"/>
+  <path fill="#557c94" d="M21 49L26 41H33L41 45 42 49 38 53H26Z"/>
+  <path fill="#89b6c4" d="M26 41H33L37 44H27L24 49H21ZM29 51H38V53H29Z"/>
+  <path fill="#2c485f" d="M27 45H34L30 50H24ZM35 50H42L38 54H29Z"/>
+  <path fill="#131f30" d="M34 44H43V49H34Z"/>
+  <path fill="#e4f4db" d="M36 45H40V47H36Z"/>
+  <path fill="#b6dfe7" d="M41 50H45V52H41Z"/>
+</svg>

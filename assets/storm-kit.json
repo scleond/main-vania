@@ -1,0 +1,29 @@
+{
+  "pivot": [32, 60],
+  "canvas": [64, 64],
+  "palette": {
+    "stone": "#29333f", "edge": "#809598", "joint": "#182330", "crack": "#3e5968",
+    "leg": "#729398", "charge": "#c8f4ff", "rest": "#6297ad", "outline": "#152330"
+  },
+  "environment": {
+    "left": 2370, "right": 3550,
+    "arches": [2470, 2854, 3238],
+    "towers": [2520, 2760, 3020, 3280, 3490],
+    "decorations": [
+      {"asset": "vane", "x": 2620, "y": 212},
+      {"asset": "insulators", "x": 2960, "y": 162},
+      {"asset": "harp", "x": 3390, "y": 300}
+    ]
+  },
+  "creatures": {
+    "easy": {"name": "Needle Mite", "body": "easy-body", "antenna": "easy-antenna", "feet": [-8, 6], "socket": [6, -20], "charge": [8, -26], "height": 30},
+    "medium": {"name": "Relay Strider", "body": "medium-body", "antenna": "medium-antenna", "feet": [-13, 10], "socket": [9, -25], "charge": [12, -34], "height": 39},
+    "miniboss": {"name": "Split-Crown Regent", "body": "miniboss-body", "antenna": "miniboss-antenna", "feet": [-20, 16], "socket": [0, -35], "charge": [0, -46], "height": 55}
+  },
+  "modifiers": {
+    "ember": {"color": "#ff9b5e", "points": [[-9, -2], [-7, -8], [-5, -4], [-3, -10], [-1, -2]]},
+    "thorn": {"color": "#b6df91", "points": [[-9, -13], [-17, -21], [-14, -12], [-18, -14], [-11, -6]]},
+    "stone": {"color": "#c8cfbd", "points": [[2, -12], [10, -14], [12, -6], [5, -3], [2, -6]]},
+    "wind": {"color": "#a5e5cf", "points": [[-9, -6], [-20, -11], [-16, -5], [-23, -4], [-11, -2]]}
+  }
+}
